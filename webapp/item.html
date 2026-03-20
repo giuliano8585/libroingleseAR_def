@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3D Viewer</title>
+  <title>AR 3D</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
 
@@ -12,7 +12,6 @@
     "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
       "three/examples/jsm/loaders/GLTFLoader.js":      "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/loaders/GLTFLoader.js",
-      "three/examples/jsm/loaders/DRACOLoader.js":     "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/loaders/DRACOLoader.js",
       "three/examples/jsm/loaders/KTX2Loader.js":      "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/loaders/KTX2Loader.js",
       "three/examples/jsm/controls/OrbitControls.js":  "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/controls/OrbitControls.js",
       "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/environments/RoomEnvironment.js",
@@ -23,7 +22,7 @@
   }
   </script>
 
-  <!-- Resolve item data from URL params BEFORE module scripts -->
+  <!-- Resolve item data BEFORE module scripts -->
   <script>
   (function(){
     var ALL_PAGES = [
@@ -91,7 +90,7 @@
           { stem:"mucca",   glb:"mucca.glb",   en:"Cow",   it:"Mucca",   fr:"Vache",   es:"Vaca",    emoji:"🐮" },
           { stem:"pecora",  glb:"pecora.glb",  en:"Sheep", it:"Pecora",  fr:"Mouton",  es:"Oveja",   emoji:"🐑" },
         ]},
-      { page:9,  c1:"#4E342E", c2:"#3E2723",
+      { page:9,  c1:"#4E342E", c2:"#3E2723", noAR:true,
         items:[
           { stem:"bottiglialatte", glb:"bottiglialatte.glb", en:"Milk Bottle", it:"Bottiglia di Latte", fr:"Bouteille de Lait", es:"Botella de Leche", emoji:"🥛", noAudio:true },
           { stem:"tazzina",        glb:"tazzina.glb",        en:"Coffee Cup",  it:"Tazzina",            fr:"Tasse à Café",      es:"Taza de Café",     emoji:"☕", noAudio:true },
@@ -147,41 +146,32 @@
     ];
 
     function enc(s){ return s.replace(/ /g,'%20'); }
-    var sp = new URLSearchParams(location.search);
+    var sp  = new URLSearchParams(location.search);
     var pg  = parseInt(sp.get('page')) || 1;
     var idx = parseInt(sp.get('idx'))  || 0;
     var pd  = ALL_PAGES.find(function(p){ return p.page === pg; }) || ALL_PAGES[0];
     var item = pd.items[Math.min(idx, pd.items.length-1)];
 
-    // Model path (absolute from site root)
-    var modelPath = enc('/3d/pagina ' + pg + '/' + item.glb);
+    window._ITEM  = item;
+    window._PAGE  = pg;
+    window._IDX   = idx;
+    window._C1    = pd.c1;
+    window._C2    = pd.c2;
+    window._NO_AR = !!pd.noAR;
 
-    // Audio paths (absolute from site root)
+    // AR: mind file + model path
+    window._MIND  = '/mind/pagina' + pg + '.mind';
+    window._MODEL = enc('/3d/pagina ' + pg + '/' + item.glb);
+
+    // Audio paths
     function audioPath(lang) {
       var folder = { en:'inglese', it:'italiano', fr:'francese', es:'spagnolo' }[lang];
-      var code   = { en:'EN',     it:'IT',       fr:'FR',       es:'ES'      }[lang];
-      var stem   = item.stem;
-      var file   = stem + '_' + code + '.mp3';
-      if (pg === 1) {
-        return enc('/Pagina 1/audio/' + folder + '/' + file);
-      } else {
-        return enc('/AUDIO LIBRO INGLESE/pagina ' + pg + '/' + folder + '/' + file);
-      }
+      var code   = { en:'EN', it:'IT', fr:'FR', es:'ES' }[lang];
+      var file   = item.stem + '_' + code + '.mp3';
+      if (pg === 1) return enc('/Pagina 1/audio/' + folder + '/' + file);
+      else          return enc('/AUDIO LIBRO INGLESE/pagina ' + pg + '/' + folder + '/' + file);
     }
-
-    window._ITEM = item;
-    window._PAGE = pg;
-    window._IDX  = idx;
-    window._C1   = pd.c1;
-    window._C2   = pd.c2;
-    window._MODEL = modelPath;
-    window._AUDIO = item.noAudio ? null : {
-      en: audioPath('en'),
-      it: audioPath('it'),
-      fr: audioPath('fr'),
-      es: audioPath('es'),
-    };
-    window._isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    window._AUDIO = item.noAudio ? null : { en:audioPath('en'), it:audioPath('it'), fr:audioPath('fr'), es:audioPath('es') };
   })();
   </script>
 
@@ -189,141 +179,131 @@
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body {
       width:100%; height:100%; overflow:hidden;
-      background: linear-gradient(160deg, #0A1628 0%, #15082E 50%, #08202E 100%);
-      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(160deg, #0A1628, #15082E, #08202E);
+      font-family:'Nunito',sans-serif;
     }
 
-    /* 3D CANVAS */
-    #viewer { position:fixed; inset:0; z-index:0; }
-    #viewer canvas { display:block; width:100%!important; height:100%!important; }
+    #ar-container { position:fixed; inset:0; z-index:0; }
+    #ar-container canvas { display:block; }
 
-    /* LOADING */
+    /* ── LOADING ── */
     #loading-screen {
       position:fixed; inset:0; z-index:200;
       background: linear-gradient(160deg, #0A1628, #15082E, #08202E);
       display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      transition: opacity 0.6s ease;
+      align-items:center; justify-content:center; transition:opacity 0.6s;
     }
     #loading-screen.fade-out { opacity:0; pointer-events:none; }
-    .loading-emoji { font-size:5rem; animation: loadBounce 0.8s ease-in-out infinite; }
+    .loading-emoji { font-size:5rem; animation:loadBounce 0.8s ease-in-out infinite; }
     @keyframes loadBounce { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-14px) scale(1.1)} }
     .loading-text { font-family:'Fredoka One',cursive; font-size:1.5rem; color:white; margin-top:1rem; }
     .loading-sub  { color:rgba(255,255,255,0.5); font-size:0.9rem; margin-top:0.3rem; }
     .loading-bar-wrap { width:220px; height:8px; background:rgba(255,255,255,0.12); border-radius:4px; margin-top:1.5rem; overflow:hidden; }
-    .loading-bar { height:100%; border-radius:4px; animation:loadFill 4s ease-in-out forwards; }
-    @keyframes loadFill { 0%{width:0%} 80%{width:90%} 100%{width:100%} }
+    .loading-bar { height:100%; border-radius:4px; animation:loadFill 5s ease-in-out forwards; }
+    @keyframes loadFill { 0%{width:0%} 90%{width:90%} 100%{width:100%} }
 
     /* ── TOP BAR ── */
-    #top-bar {
+    #top-overlay {
       position:fixed; top:0; left:0; right:0; z-index:100;
-      padding:0.9rem 1rem;
+      padding:0.8rem 1rem;
       display:flex; align-items:center; gap:0.8rem;
-      background:linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+      background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent);
       pointer-events:none;
     }
-    #top-bar > * { pointer-events:all; }
+    #top-overlay > * { pointer-events:all; }
     #back-btn {
-      background:rgba(255,255,255,0.18); backdrop-filter:blur(10px);
-      border:2px solid rgba(255,255,255,0.28); border-radius:50%;
+      background:rgba(255,255,255,0.2); backdrop-filter:blur(10px);
+      border:2px solid rgba(255,255,255,0.3); border-radius:50%;
       width:44px; height:44px; display:flex; align-items:center; justify-content:center;
-      cursor:pointer; color:white; font-size:1.4rem;
-      text-decoration:none; flex-shrink:0;
-      transition:all 0.2s ease;
+      cursor:pointer; color:white; font-size:1.4rem; text-decoration:none; flex-shrink:0;
+      transition:all 0.2s;
     }
-    #back-btn:hover  { background:rgba(255,255,255,0.3); transform:scale(1.1); }
-    #back-btn:active { transform:scale(0.9); }
-    #item-emoji-badge {
-      font-size:2.2rem; flex-shrink:0;
-      filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5));
+    #back-btn:hover { background:rgba(255,255,255,0.35); transform:scale(1.1); }
+    #back-btn:active{ transform:scale(0.9); }
+    #item-badge {
+      font-family:'Fredoka One',cursive; font-size:1.9rem;
+      width:52px; height:52px; border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      color:white; box-shadow:0 4px 15px rgba(0,0,0,0.4); flex-shrink:0;
       animation:badgePop 0.5s cubic-bezier(.34,1.56,.64,1) both;
     }
     @keyframes badgePop { from{transform:scale(0) rotate(-20deg)} to{transform:scale(1) rotate(0)} }
-    #item-info { flex:1; min-width:0; }
-    #item-name-en {
-      font-family:'Fredoka One',cursive; font-size:1.7rem; color:white;
-      text-shadow:0 2px 8px rgba(0,0,0,0.6); line-height:1; white-space:nowrap;
-      overflow:hidden; text-overflow:ellipsis;
-    }
-    #item-name-sub { font-size:0.72rem; color:rgba(255,255,255,0.55); margin-top:2px; }
+    #item-info { flex:1; }
+    #item-name-en { font-family:'Fredoka One',cursive; font-size:1.6rem; color:white; text-shadow:0 2px 8px rgba(0,0,0,0.6); line-height:1; }
+    #item-names-sub { font-size:0.72rem; color:rgba(255,255,255,0.55); margin-top:2px; }
 
-    /* HINT */
-    #rotate-hint {
-      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-      z-index:50; pointer-events:none; text-align:center;
-      opacity:1; transition:opacity 1s ease;
+    /* ── SCAN PROMPT ── */
+    #scan-prompt {
+      position:fixed; bottom:145px; left:50%; transform:translateX(-50%);
+      z-index:100; text-align:center; transition:opacity 0.5s, transform 0.5s;
+      white-space:nowrap;
     }
-    #rotate-hint.hide { opacity:0; }
-    .hint-card {
-      background:rgba(255,255,255,0.1); backdrop-filter:blur(14px);
-      border:1.5px solid rgba(255,255,255,0.2); border-radius:1.5rem;
+    #scan-prompt.hidden { opacity:0; transform:translateX(-50%) scale(0.85); pointer-events:none; }
+    .scan-card {
+      background:rgba(255,255,255,0.12); backdrop-filter:blur(16px);
+      border:2px solid rgba(255,255,255,0.25); border-radius:1.5rem;
       padding:1rem 1.8rem; color:white;
     }
-    .hint-icon { font-size:2.5rem; display:block; animation:hintSpin 2s ease-in-out infinite; }
-    @keyframes hintSpin { 0%,100%{transform:rotate(-15deg)} 50%{transform:rotate(15deg)} }
-    .hint-text { font-family:'Fredoka One',cursive; font-size:1rem; margin-top:0.4rem; }
+    .scan-icon { font-size:2.8rem; animation:scanPulse 1.5s ease-in-out infinite; display:block; }
+    @keyframes scanPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
+    .scan-text { font-family:'Fredoka One',cursive; font-size:1rem; margin-top:0.3rem; line-height:1.3; white-space:normal; }
+    .scan-sub  { font-size:0.75rem; opacity:0.65; margin-top:0.2rem; }
+    .scan-line-wrap { margin:0.7rem auto 0; width:110px; height:4px; background:rgba(255,255,255,0.15); border-radius:2px; overflow:hidden; }
+    .scan-line { height:100%; width:40%; background:linear-gradient(90deg,transparent,white,transparent); border-radius:2px; animation:scanLine 1.5s ease-in-out infinite; }
+    @keyframes scanLine { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
 
     /* ── LANGUAGE SELECTOR ── */
     #lang-selector {
-      position:fixed; bottom:130px; left:50%; transform:translateX(-50%);
+      position:fixed; bottom:85px; left:50%; transform:translateX(-50%);
       z-index:100;
-      display:flex; gap:0.5rem;
+      display:flex; gap:0.4rem;
       background:rgba(255,255,255,0.1); backdrop-filter:blur(16px);
       border:1.5px solid rgba(255,255,255,0.2); border-radius:3rem;
-      padding:0.4rem;
+      padding:0.35rem;
+      opacity:0; transition:opacity 0.5s;
+      pointer-events:none;
     }
+    #lang-selector.visible { opacity:1; pointer-events:all; }
+    /* Always show lang selector */
+    #lang-selector.always { opacity:1; pointer-events:all; }
     .lang-btn {
-      padding:0.45rem 1rem; border-radius:2rem; border:none; cursor:pointer;
-      font-family:'Fredoka One',cursive; font-size:0.9rem; font-weight:700;
-      color:rgba(255,255,255,0.6);
-      background:transparent;
-      transition:all 0.2s ease;
-      display:flex; align-items:center; gap:0.3rem;
+      padding:0.4rem 0.9rem; border-radius:2rem; border:none; cursor:pointer;
+      font-family:'Fredoka One',cursive; font-size:0.85rem;
+      color:rgba(255,255,255,0.6); background:transparent;
+      transition:all 0.2s;
     }
-    .lang-btn.active {
-      background:white; color:#0B1A4A;
-      box-shadow:0 4px 14px rgba(0,0,0,0.3);
-    }
-    .lang-btn:active { transform:scale(0.93); }
+    .lang-btn.active { background:white; color:#0B1A4A; box-shadow:0 4px 14px rgba(0,0,0,0.3); }
+    .lang-btn:active { transform:scale(0.92); }
 
-    /* ── AUDIO / PLAY BUTTON ── */
-    #audio-wrap {
-      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
-      z-index:100; text-align:center;
+    /* ── PLAY BUTTON ── */
+    #sound-btn-wrap {
+      position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(16px);
+      z-index:100; opacity:0; transition:opacity 0.5s, transform 0.5s;
+      pointer-events:none; text-align:center;
     }
-    #play-btn {
-      width:88px; height:88px; border-radius:50%; border:none; cursor:pointer;
-      font-size:2.2rem; display:flex; align-items:center; justify-content:center;
+    #sound-btn-wrap.visible { opacity:1; transform:translateX(-50%) translateY(0); pointer-events:all; }
+    #sound-btn {
+      width:82px; height:82px; border-radius:50%; border:none;
+      cursor:pointer; font-size:2.2rem;
+      display:flex; align-items:center; justify-content:center;
       box-shadow:0 8px 30px rgba(0,0,0,0.5);
-      transition:transform 0.15s; animation:pulseShadow 2.5s ease-in-out infinite;
+      transition:transform 0.15s; animation:soundPulse 2s ease-in-out infinite;
     }
-    @keyframes pulseShadow {
-      0%  { box-shadow:0 8px 30px rgba(0,0,0,0.5), 0 0 0 0px rgba(255,255,255,0.35); }
-      50% { box-shadow:0 8px 30px rgba(0,0,0,0.5), 0 0 0 18px rgba(255,255,255,0); }
-      100%{ box-shadow:0 8px 30px rgba(0,0,0,0.5), 0 0 0 0px rgba(255,255,255,0); }
+    #sound-btn:active { transform:scale(0.88); }
+    @keyframes soundPulse {
+      0%  { box-shadow:0 8px 30px rgba(0,0,0,0.5),0 0 0 0px rgba(255,255,255,0.4); }
+      50% { box-shadow:0 8px 30px rgba(0,0,0,0.5),0 0 0 16px rgba(255,255,255,0); }
+      100%{ box-shadow:0 8px 30px rgba(0,0,0,0.5),0 0 0 0px rgba(255,255,255,0); }
     }
-    #play-btn:active { transform:scale(0.88); }
-    #play-btn.playing { animation:playingPulse 0.5s ease-in-out infinite alternate; }
-    @keyframes playingPulse { from{transform:scale(1)} to{transform:scale(1.08)} }
-    .play-label {
-      font-family:'Fredoka One',cursive; color:white; font-size:0.85rem;
-      margin-top:0.4rem; text-shadow:0 2px 6px rgba(0,0,0,0.6);
-    }
+    .sound-label { font-family:'Fredoka One',cursive; color:white; font-size:0.8rem; margin-top:0.3rem; text-shadow:0 2px 6px rgba(0,0,0,0.6); }
 
-    /* No audio message */
-    #no-audio-msg {
-      position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
-      z-index:100; background:rgba(255,255,255,0.12); backdrop-filter:blur(10px);
-      border:1.5px solid rgba(255,255,255,0.2); border-radius:1rem;
-      padding:0.6rem 1.4rem; color:white; font-size:0.85rem; text-align:center;
-      display:none; white-space:nowrap;
-    }
-
-    /* ── ZOOM BUTTONS ── */
+    /* ── ZOOM ── */
     #zoom-btns {
       position:fixed; right:16px; top:50%; transform:translateY(-50%);
       z-index:100; display:flex; flex-direction:column; gap:10px;
+      opacity:0; transition:opacity 0.5s; pointer-events:none;
     }
+    #zoom-btns.visible { opacity:1; pointer-events:all; }
     .zoom-btn {
       width:50px; height:50px; border-radius:50%;
       border:2px solid rgba(255,255,255,0.3);
@@ -331,410 +311,444 @@
       color:white; font-size:1.8rem; font-weight:700; cursor:pointer;
       display:flex; align-items:center; justify-content:center;
       box-shadow:0 4px 16px rgba(0,0,0,0.4);
-      transition:transform 0.15s, background 0.15s; line-height:1;
+      transition:transform 0.15s; line-height:1;
     }
     .zoom-btn:active { transform:scale(0.88); background:rgba(255,255,255,0.3); }
 
-    /* ── FLOOR AR BUTTON ── */
-    #floor-btn-wrap {
-      position:fixed; left:16px; top:50%; transform:translateY(-50%);
-      z-index:100;
-    }
-    .floor-btn {
-      width:54px; padding:0.55rem 0; border-radius:1.6rem;
-      border:2px solid rgba(255,255,255,0.3);
-      background:rgba(255,255,255,0.15); backdrop-filter:blur(10px);
-      color:white; cursor:pointer; display:flex; flex-direction:column;
-      align-items:center; gap:2px;
-      box-shadow:0 4px 16px rgba(0,0,0,0.4);
-      transition:transform 0.15s, background 0.15s;
-    }
-    .floor-btn:active { transform:scale(0.88); background:rgba(255,255,255,0.3); }
-    .floor-btn-icon  { font-size:1.5rem; line-height:1; }
-    .floor-btn-label { font-family:'Fredoka One',cursive; font-size:0.57rem; color:rgba(255,255,255,0.85); line-height:1; text-align:center; }
+    /* ── FOUND FLASH ── */
+    #found-flash { position:fixed; inset:0; background:white; z-index:80; pointer-events:none; opacity:0; }
+    #found-flash.flash { animation:flashAnim 0.4s ease; }
+    @keyframes flashAnim { 0%{opacity:0.65} 100%{opacity:0} }
 
-    /* SPARKLES */
-    #sparkle-overlay { position:fixed; inset:0; pointer-events:none; z-index:90; overflow:hidden; }
+    /* ── FOUND LABEL ── */
+    #found-label {
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) scale(0);
+      z-index:90; pointer-events:none; text-align:center;
+    }
+    #found-label.pop { animation:labelPop 0.9s cubic-bezier(.34,1.56,.64,1) forwards; }
+    @keyframes labelPop {
+      0%  { transform:translate(-50%,-50%) scale(0) rotate(-10deg); opacity:1; }
+      60% { transform:translate(-50%,-50%) scale(1.15) rotate(3deg); opacity:1; }
+      85% { transform:translate(-50%,-50%) scale(1.02) rotate(0deg); opacity:1; }
+      100%{ transform:translate(-50%,-50%) scale(0) rotate(0deg); opacity:0; }
+    }
+    .found-inner { background:rgba(255,255,255,0.95); border-radius:2rem; padding:0.9rem 2.2rem; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+    .found-emoji { font-size:3rem; display:block; }
+    .found-text  { font-family:'Fredoka One',cursive; font-size:1.7rem; line-height:1; margin-top:0.2rem; }
+
+    /* ── SPARKLES ── */
+    #sparkle-overlay { position:fixed; inset:0; pointer-events:none; z-index:50; overflow:hidden; }
     .spark { position:absolute; pointer-events:none; animation:sparkFly var(--dur) ease-out forwards; font-size:var(--sz); }
     @keyframes sparkFly {
-      0%   { transform:translate(0,0) scale(0) rotate(0deg); opacity:1; }
-      60%  { opacity:1; }
-      100% { transform:translate(var(--dx),var(--dy)) scale(1) rotate(var(--rot)); opacity:0; }
+      0%  { transform:translate(0,0) scale(0) rotate(0deg); opacity:1; }
+      60% { opacity:1; }
+      100%{ transform:translate(var(--dx),var(--dy)) scale(1) rotate(var(--rot)); opacity:0; }
     }
 
-    /* NAMES BOTTOM PANEL */
-    #names-panel {
-      position:fixed; bottom:225px; left:50%; transform:translateX(-50%);
-      z-index:100; text-align:center;
-      pointer-events:none;
+    /* ── NO AUDIO ── */
+    #no-audio-msg {
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      z-index:100; background:rgba(255,255,255,0.12); backdrop-filter:blur(10px);
+      border:1.5px solid rgba(255,255,255,0.2); border-radius:1rem;
+      padding:0.6rem 1.4rem; color:white; font-size:0.85rem; text-align:center; display:none;
     }
-    .name-en-big {
-      font-family:'Fredoka One',cursive; font-size:1.5rem; color:white;
-      text-shadow:0 3px 10px rgba(0,0,0,0.5);
-    }
-    .names-row {
-      display:flex; gap:0.8rem; justify-content:center;
-      margin-top:0.3rem; flex-wrap:wrap;
-    }
-    .name-chip {
-      background:rgba(255,255,255,0.12); backdrop-filter:blur(8px);
-      border:1px solid rgba(255,255,255,0.2); border-radius:1.5rem;
-      padding:0.25rem 0.7rem; font-size:0.75rem; color:rgba(255,255,255,0.75);
-    }
-    .name-chip.hl { background:rgba(255,255,255,0.25); color:white; }
   </style>
 </head>
 <body>
 
-<div id="viewer"></div>
+<div id="ar-container"></div>
 
 <div id="loading-screen">
   <div class="loading-emoji" id="loading-emoji">✨</div>
-  <div class="loading-text" id="loading-text">Loading…</div>
-  <div class="loading-sub">Preparing your 3D model</div>
-  <div class="loading-bar-wrap">
-    <div class="loading-bar" id="loading-bar"></div>
-  </div>
+  <div class="loading-text"  id="loading-text">Loading…</div>
+  <div class="loading-sub"   id="loading-sub">Preparing AR magic ✨</div>
+  <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
 </div>
 
-<!-- Rotate hint (disappears after first interaction) -->
-<div id="rotate-hint">
-  <div class="hint-card">
-    <span class="hint-icon">🖐</span>
-    <div class="hint-text">Drag to rotate · Pinch to zoom</div>
+<div id="found-flash"></div>
+<div id="found-label">
+  <div class="found-inner">
+    <span class="found-emoji" id="found-emoji-el"></span>
+    <div class="found-text"   id="found-name-el"></div>
   </div>
 </div>
-
 <div id="sparkle-overlay"></div>
 
 <!-- TOP BAR -->
-<div id="top-bar">
+<div id="top-overlay">
   <a id="back-btn" href="#">←</a>
-  <div id="item-emoji-badge">✨</div>
+  <div id="item-badge"></div>
   <div id="item-info">
     <div id="item-name-en">Loading</div>
-    <div id="item-name-sub">🌍 4 languages available</div>
+    <div id="item-names-sub"></div>
   </div>
 </div>
 
-<!-- NAMES -->
-<div id="names-panel">
-  <div class="name-en-big" id="name-en-big"></div>
-  <div class="names-row" id="names-row"></div>
+<!-- SCAN PROMPT (AR mode) -->
+<div id="scan-prompt">
+  <div class="scan-card">
+    <span class="scan-icon">📖</span>
+    <div class="scan-text" id="scan-text">Point the camera<br>at the book page!</div>
+    <div class="scan-sub">The 3D model will appear ✨</div>
+    <div class="scan-line-wrap"><div class="scan-line"></div></div>
+  </div>
 </div>
 
-<!-- LANGUAGE SELECTOR -->
-<div id="lang-selector">
+<!-- LANGUAGE SELECTOR (always visible) -->
+<div id="lang-selector" class="always">
   <button class="lang-btn active" data-lang="en" onclick="selectLang('en')">🇬🇧 EN</button>
-  <button class="lang-btn" data-lang="it" onclick="selectLang('it')">🇮🇹 IT</button>
-  <button class="lang-btn" data-lang="fr" onclick="selectLang('fr')">🇫🇷 FR</button>
-  <button class="lang-btn" data-lang="es" onclick="selectLang('es')">🇪🇸 ES</button>
+  <button class="lang-btn"        data-lang="it" onclick="selectLang('it')">🇮🇹 IT</button>
+  <button class="lang-btn"        data-lang="fr" onclick="selectLang('fr')">🇫🇷 FR</button>
+  <button class="lang-btn"        data-lang="es" onclick="selectLang('es')">🇪🇸 ES</button>
 </div>
 
-<!-- AUDIO -->
-<div id="audio-wrap">
-  <button id="play-btn" onclick="playAudio()">🔊</button>
-  <div class="play-label" id="play-label">Listen!</div>
+<!-- AUDIO PLAY BUTTON -->
+<div id="sound-btn-wrap">
+  <button id="sound-btn" onclick="playAudio()">🔊</button>
+  <div class="sound-label" id="sound-label">Listen!</div>
 </div>
 <div id="no-audio-msg">🔇 No audio available</div>
 
-<!-- ZOOM -->
+<!-- ZOOM (visible when target found) -->
 <div id="zoom-btns">
-  <button class="zoom-btn" onclick="doZoom(1.25)">+</button>
-  <button class="zoom-btn" onclick="doZoom(0.8)">−</button>
+  <button class="zoom-btn" onclick="zoomIn()">+</button>
+  <button class="zoom-btn" onclick="zoomOut()">−</button>
 </div>
 
-<!-- FLOOR AR -->
-<div id="floor-btn-wrap">
-  <button class="floor-btn" onclick="launchFloorAR()">
-    <span class="floor-btn-icon">🌍</span>
-    <span class="floor-btn-label">Floor AR</span>
-  </button>
-</div>
-
-<!-- UI LOGIC (classic script, global vars) -->
+<!-- UI LOGIC -->
 <script>
 var item    = window._ITEM || {};
 var pageNum = window._PAGE || 1;
 var c1      = window._C1  || '#7C3AED';
 var c2      = window._C2  || '#5B21B6';
+var noAR    = window._NO_AR;
 var audios  = window._AUDIO;
 var curLang = 'en';
 var audioEl = null;
 
-// Populate UI
-document.getElementById('loading-emoji').textContent = item.emoji || '✨';
-document.getElementById('loading-text').textContent  = item.en   || 'Loading…';
+// Populate
+document.getElementById('loading-emoji').textContent  = item.emoji || '✨';
+document.getElementById('loading-text').textContent   = item.en    || 'Loading…';
+document.getElementById('loading-sub').textContent    = noAR ? 'Preparing 3D viewer…' : 'Preparing AR magic ✨';
 document.getElementById('loading-bar').style.background = 'linear-gradient(90deg,'+c1+','+c2+')';
-document.getElementById('item-emoji-badge').textContent = item.emoji || '';
-document.getElementById('item-name-en').textContent     = item.en    || '';
-document.getElementById('name-en-big').textContent      = item.en    || '';
+document.getElementById('item-badge').textContent     = item.emoji || '';
+document.getElementById('item-badge').style.background = 'linear-gradient(135deg,'+c1+','+c2+')';
+document.getElementById('item-name-en').textContent   = item.en    || '';
+document.getElementById('item-names-sub').textContent = (item.it||'') + ' · ' + (item.fr||'') + ' · ' + (item.es||'');
+document.getElementById('found-emoji-el').textContent = item.emoji || '';
+document.getElementById('found-name-el').textContent  = item.en    || '';
+document.getElementById('found-name-el').style.color  = c1;
 document.getElementById('back-btn').href = '/webapp/page.html?page=' + pageNum;
 
-// Names chips
-var namesRow = document.getElementById('names-row');
-var chips = [
-  { lang:'it', flag:'🇮🇹', name: item.it },
-  { lang:'fr', flag:'🇫🇷', name: item.fr },
-  { lang:'es', flag:'🇪🇸', name: item.es },
-];
-chips.forEach(function(c){
-  if (!c.name) return;
-  var chip = document.createElement('span');
-  chip.className = 'name-chip';
-  chip.id = 'chip-' + c.lang;
-  chip.textContent = c.flag + ' ' + c.name;
-  namesRow.appendChild(chip);
-});
-
-var playBtn   = document.getElementById('play-btn');
-var playLabel = document.getElementById('play-label');
-playBtn.style.background = 'linear-gradient(135deg,' + c1 + ',' + c2 + ')';
+var soundBtn = document.getElementById('sound-btn');
+soundBtn.style.background = 'linear-gradient(135deg,'+c1+','+c2+')';
 
 if (audios) {
   audioEl = new Audio(audios['en']);
   audioEl.preload = 'auto';
+  // Show sound button always (visible after target found in AR, always in 3D mode)
+  if (noAR) {
+    document.getElementById('sound-btn-wrap').classList.add('visible');
+    document.getElementById('lang-selector').classList.add('visible');
+  }
 } else {
-  document.getElementById('audio-wrap').style.display = 'none';
-  document.getElementById('lang-selector').style.display = 'none';
-  document.getElementById('no-audio-msg').style.display = 'block';
+  soundBtn.style.display = 'none';
+  document.querySelector('.sound-label').style.display = 'none';
+  if (noAR) document.getElementById('no-audio-msg').style.display = 'block';
 }
 
-function selectLang(lang) {
-  curLang = lang;
-  document.querySelectorAll('.lang-btn').forEach(function(b){
-    b.classList.toggle('active', b.dataset.lang === lang);
-  });
-  // Highlight matching chip
-  document.querySelectorAll('.name-chip').forEach(function(c){ c.classList.remove('hl'); });
-  var hl = document.getElementById('chip-' + lang);
-  if (hl) hl.classList.add('hl');
-  // Update name display
-  var names = { en: item.en, it: item.it, fr: item.fr, es: item.es };
-  document.getElementById('name-en-big').textContent = names[lang] || item.en;
-  // Preload audio for selected lang
-  if (audios && audios[lang]) {
-    if (audioEl) { audioEl.pause(); audioEl.src = audios[lang]; audioEl.load(); }
-    else { audioEl = new Audio(audios[lang]); audioEl.preload = 'auto'; }
-  }
+if (noAR) {
+  document.getElementById('scan-prompt').style.display = 'none';
 }
 
-function playAudio() {
-  if (!audioEl) return;
-  playBtn.classList.add('playing');
-  setTimeout(function(){ playBtn.classList.remove('playing'); }, 1500);
-  audioEl.currentTime = 0;
-  audioEl.play().catch(function(e){ console.warn('Audio error:', e); });
-  // Note sparkles
-  var rect = playBtn.getBoundingClientRect();
-  var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
-  var notes = ['🎵','🎶','♪','♫','✨'];
-  for (var i = 0; i < 14; i++) {
-    (function(i){
-      var s = document.createElement('div');
-      s.className = 'spark';
-      var angle = Math.PI*2*i/14;
-      var dist  = 45 + Math.random()*70;
-      s.textContent = notes[Math.floor(Math.random()*notes.length)];
-      s.style.cssText = 'left:'+cx+'px;top:'+cy+'px;'
-        +'--dur:0.7s;--sz:1.1rem;'
-        +'--dx:'+(Math.cos(angle)*dist).toFixed(0)+'px;'
-        +'--dy:'+(Math.sin(angle)*dist).toFixed(0)+'px;--rot:0deg;';
-      document.getElementById('sparkle-overlay').appendChild(s);
-      setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); }, 800);
-    })(i);
-  }
-}
-
-function doZoom(factor) {
-  if (window._orbitControls) {
-    var ctrl = window._orbitControls;
-    ctrl.object.position.multiplyScalar(1/factor);
-    ctrl.update();
-  }
-}
-
-function launchFloorAR() {
-  var glb  = window._ITEM && window._ITEM.glb;
-  var stem = glb ? glb.replace('.glb','') : 'item';
-  var pg   = window._PAGE || 1;
-  location.href = '/webapp/floor-ar.html?page=' + pg + '&glb=' + encodeURIComponent(glb || '');
-}
-
-// Hint: hide on first interaction
-var hintHidden = false;
-function hideHint() {
-  if (hintHidden) return;
-  hintHidden = true;
-  document.getElementById('rotate-hint').classList.add('hide');
-}
-['touchstart','mousedown','wheel'].forEach(function(ev){
-  document.addEventListener(ev, hideHint, { once:true, passive:true });
-});
-setTimeout(hideHint, 5000);
-
-// Loading
+// Loading hide
 var loadingHidden = false;
 function hideLoading() {
   if (loadingHidden) return;
   loadingHidden = true;
   var ls = document.getElementById('loading-screen');
   ls.classList.add('fade-out');
-  setTimeout(function(){ if (ls && ls.parentNode) ls.parentNode.removeChild(ls); }, 750);
+  setTimeout(function(){ if (ls&&ls.parentNode) ls.parentNode.removeChild(ls); }, 700);
 }
 window.hideLoading = hideLoading;
-setTimeout(hideLoading, 15000); // safety fallback
+setTimeout(hideLoading, 15000);
+
+function selectLang(lang) {
+  curLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.lang===lang); });
+  if (audios && audios[lang]) {
+    if (audioEl) { audioEl.pause(); audioEl.src = audios[lang]; audioEl.load(); }
+    else { audioEl = new Audio(audios[lang]); audioEl.preload='auto'; }
+  }
+  // Update found label
+  var names = { en:item.en, it:item.it, fr:item.fr, es:item.es };
+  document.getElementById('found-name-el').textContent = names[lang] || item.en;
+  document.getElementById('item-name-en').textContent  = names[lang] || item.en;
+}
+
+function playAudio() {
+  if (!audioEl) return;
+  soundBtn.style.transform = 'scale(0.85)';
+  setTimeout(function(){ soundBtn.style.transform=''; }, 150);
+  audioEl.currentTime = 0;
+  audioEl.play().catch(function(e){ console.warn('Audio:', e); });
+  spawnNotes();
+}
+
+var sparkEmojis = ['⭐','✨','🌟','💫','🎉','🎊','🎈','❤️','🔥','💥'];
+function spawnSparkles() {
+  var overlay = document.getElementById('sparkle-overlay');
+  var cx = window.innerWidth/2, cy = window.innerHeight/2;
+  for (var i=0;i<28;i++) {
+    (function(i){
+      var s=document.createElement('div'); s.className='spark';
+      var angle=Math.PI*2*i/28+Math.random()*0.5;
+      var dist=80+Math.random()*180;
+      s.textContent=sparkEmojis[Math.floor(Math.random()*sparkEmojis.length)];
+      s.style.cssText='left:'+cx+'px;top:'+cy+'px;'
+        +'--dur:'+(0.6+Math.random()*0.8).toFixed(2)+'s;'
+        +'--sz:'+(1.2+Math.random()*1.4).toFixed(1)+'rem;'
+        +'--dx:'+(Math.cos(angle)*dist).toFixed(0)+'px;'
+        +'--dy:'+(Math.sin(angle)*dist).toFixed(0)+'px;'
+        +'--rot:'+(Math.random()*720-360).toFixed(0)+'deg;';
+      overlay.appendChild(s);
+      setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); },1600);
+    })(i);
+  }
+}
+function spawnNotes() {
+  var overlay = document.getElementById('sparkle-overlay');
+  var rect = soundBtn.getBoundingClientRect();
+  var cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  var notes=['🎵','🎶','♪','♫'];
+  for(var i=0;i<12;i++){
+    (function(i){
+      var s=document.createElement('div'); s.className='spark';
+      var angle=Math.PI*2*i/12, dist=40+Math.random()*70;
+      s.textContent=notes[Math.floor(Math.random()*4)];
+      s.style.cssText='left:'+cx+'px;top:'+cy+'px;'
+        +'--dur:0.7s;--sz:1.1rem;'
+        +'--dx:'+(Math.cos(angle)*dist).toFixed(0)+'px;'
+        +'--dy:'+(Math.sin(angle)*dist).toFixed(0)+'px;--rot:0deg;';
+      overlay.appendChild(s);
+      setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); },800);
+    })(i);
+  }
+}
+
+function onTargetFound() {
+  document.getElementById('scan-prompt').classList.add('hidden');
+  document.getElementById('sound-btn-wrap').classList.add('visible');
+  document.getElementById('zoom-btns').classList.add('visible');
+  var flash=document.getElementById('found-flash');
+  flash.classList.remove('flash'); void flash.offsetWidth; flash.classList.add('flash');
+  var label=document.getElementById('found-label');
+  label.classList.remove('pop'); void label.offsetWidth; label.classList.add('pop');
+  spawnSparkles();
+}
+function onTargetLost() {
+  document.getElementById('scan-prompt').classList.remove('hidden');
+  document.getElementById('sound-btn-wrap').classList.remove('visible');
+  document.getElementById('zoom-btns').classList.remove('visible');
+}
+window.onTargetFound = onTargetFound;
+window.onTargetLost  = onTargetLost;
+
+var userScale = 5.0;
+function zoomIn()  { userScale = Math.min(15, userScale*1.3); }
+function zoomOut() { userScale = Math.max(0.3, userScale/1.3); }
+window._arZoom = { get:function(){ return userScale; }, set:function(v){ userScale=Math.max(0.3,Math.min(15,v)); } };
 </script>
 
-<!-- THREE.JS 3D VIEWER (ES module) -->
+<!-- THREE.JS + MINDAR (AR mode) or ORBIT (fallback) -->
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-try {
-  const container = document.getElementById('viewer');
-  const W = window.innerWidth, H = window.innerHeight;
+function easeOutElastic(t) {
+  if (t<=0) return 0; if (t>=1) return 1;
+  const p=0.3;
+  return Math.pow(2,-10*t)*Math.sin((t-p/4)*(2*Math.PI)/p)+1;
+}
 
-  // Renderer
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-  renderer.setSize(W, H);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.toneMapping    = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
-  container.appendChild(renderer.domElement);
+const arDiv    = document.getElementById('ar-container');
+const noAR     = window._NO_AR;
+const modelURL = window._MODEL;
+const mindURL  = window._MIND;
+const anchorIdx= window._IDX || 0;
 
-  // Scene with gradient background (via CSS, renderer is opaque)
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#0A1628');
-
-  // Camera
-  const camera = new THREE.PerspectiveCamera(45, W/H, 0.01, 1000);
-  camera.position.set(0, 0.5, 4);
-
-  // Environment (IBL for PBR materials)
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  pmrem.dispose();
-
-  // Lights
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 2.5));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-  dirLight.position.set(4, 8, 5);
-  scene.add(dirLight);
-
-  // Orbit controls
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping   = true;
-  controls.dampingFactor   = 0.06;
-  controls.autoRotate      = true;
-  controls.autoRotateSpeed = 1.2;
-  controls.minDistance     = 0.5;
-  controls.maxDistance     = 20;
-  controls.target.set(0, 0, 0);
-  window._orbitControls = controls;
-
-  // Pause auto-rotate on user interaction
-  controls.addEventListener('start', () => { controls.autoRotate = false; });
-
-  // Load model
-  let mixer = null;
-  const modelPath = window._MODEL;
-
+// ─── COMMON: load model ───────────────────────────────────────────────────────
+async function loadModel(renderer) {
   const ktx2 = new KTX2Loader()
     .setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/libs/basis/')
     .detectSupport(renderer);
-
   try {
     await MeshoptDecoder.ready;
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);
     loader.setKTX2Loader(ktx2);
-
-    const gltf = await new Promise((resolve, reject) => {
-      loader.load(modelPath, resolve, undefined, reject);
-    });
-
-    const model = gltf.scene;
-
-    // Center and auto-scale model
-    const box = new THREE.Box3().setFromObject(model);
-    const center = box.getCenter(new THREE.Vector3());
-    const size   = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const scale  = 2.2 / maxDim;
-    model.scale.setScalar(scale);
-    model.position.copy(center).negate().multiplyScalar(scale);
-    model.position.y -= size.y * scale * 0.1; // slight downward shift
-
-    // Pop-in animation
-    model.scale.setScalar(0);
-    scene.add(model);
-
-    // Animations
-    if (gltf.animations?.length) {
-      mixer = new THREE.AnimationMixer(model);
-      gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-    }
-
-    // Animate scale pop
-    let popStart = performance.now();
-    const POP_DUR = 900;
-    function easeOutElastic(t) {
-      if (t <= 0) return 0; if (t >= 1) return 1;
-      const p = 0.3;
-      return Math.pow(2,-10*t)*Math.sin((t-p/4)*(2*Math.PI)/p)+1;
-    }
-
-    // Camera to fit model nicely
-    const fitDist = Math.max(2.0, maxDim * scale * 1.8);
-    camera.position.set(0, maxDim*scale*0.15, fitDist);
-    controls.maxDistance = fitDist * 5;
-
-    window.hideLoading();
-
-    const clock = new THREE.Clock();
-    renderer.setAnimationLoop(() => {
-      const delta = clock.getDelta();
-      if (mixer) mixer.update(delta);
-      controls.update();
-
-      // Pop animation
-      const t = Math.min((performance.now() - popStart) / POP_DUR, 1);
-      model.scale.setScalar(easeOutElastic(t) * scale);
-
-      renderer.render(scene, camera);
-    });
-
+    return await new Promise((resolve, reject) => loader.load(modelURL, resolve, undefined, reject));
   } catch(e) {
-    console.warn('Model load failed:', e);
-    window.hideLoading();
-    // Add placeholder
-    const geo = new THREE.SphereGeometry(1, 32, 32);
-    const mat = new THREE.MeshStandardMaterial({ color: window._C1 || '#7C3AED', roughness:0.4, metalness:0.3 });
-    scene.add(new THREE.Mesh(geo, mat));
-    const clock2 = new THREE.Clock();
-    renderer.setAnimationLoop(() => {
-      controls.update();
-      renderer.render(scene, camera);
-    });
+    console.warn('Model failed:', e);
+    return null;
   }
+}
 
-  // Resize
-  window.addEventListener('resize', () => {
-    const W2 = window.innerWidth, H2 = window.innerHeight;
-    camera.aspect = W2/H2;
+if (noAR) {
+  // ─── 3D ORBIT VIEWER (fallback for page 9) ──────────────────────────────────
+  const { OrbitControls } = await import('three/examples/jsm/controls/OrbitControls.js');
+  const W=window.innerWidth, H=window.innerHeight;
+  const renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setSize(W,H); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  arDiv.appendChild(renderer.domElement);
+  const scene=new THREE.Scene(); scene.background=new THREE.Color('#0A1628');
+  const camera=new THREE.PerspectiveCamera(45,W/H,0.01,1000);
+  camera.position.set(0,0.5,4);
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  scene.environment=pmrem.fromScene(new RoomEnvironment()).texture; pmrem.dispose();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x334455,2.5));
+  const controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.autoRotate=true; controls.autoRotateSpeed=1.2;
+  controls.addEventListener('start',()=>{ controls.autoRotate=false; });
+
+  const gltf = await loadModel(renderer);
+  if (gltf) {
+    const model=gltf.scene;
+    const box=new THREE.Box3().setFromObject(model);
+    const size=box.getSize(new THREE.Vector3());
+    const maxDim=Math.max(size.x,size.y,size.z);
+    const sc=2.2/maxDim;
+    model.scale.setScalar(0);
+    model.position.copy(box.getCenter(new THREE.Vector3())).negate().multiplyScalar(sc);
+    scene.add(model);
+    if (gltf.animations?.length) {
+      const mx=new THREE.AnimationMixer(model);
+      gltf.animations.forEach(c=>mx.clipAction(c).play());
+    }
+    let popStart=performance.now();
+    const clock=new THREE.Clock();
+    renderer.setAnimationLoop(()=>{
+      controls.update();
+      const t=Math.min((performance.now()-popStart)/900,1);
+      model.scale.setScalar(easeOutElastic(t)*sc);
+      renderer.render(scene,camera);
+    });
+  } else {
+    renderer.setAnimationLoop(()=>{ controls.update(); renderer.render(scene,camera); });
+  }
+  window.hideLoading();
+  window.addEventListener('resize',()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(W2, H2);
+    renderer.setSize(window.innerWidth,window.innerHeight);
   });
 
-} catch(err) {
-  console.error('3D init error:', err);
-  window.hideLoading();
+} else {
+  // ─── MINDAR AR MODE ──────────────────────────────────────────────────────────
+  try {
+    const { MindARThree } = await import('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js');
+
+    const mindarThree = new MindARThree({
+      container: arDiv,
+      imageTargetSrc: mindURL,
+      uiLoading: 'no', uiError: 'no', uiScanning: 'no',
+    });
+
+    const { renderer, scene, camera } = mindarThree;
+    renderer.outputEncoding      = THREE.sRGBEncoding;
+    renderer.toneMapping         = THREE.LinearToneMapping;
+    renderer.toneMappingExposure = 1;
+
+    const pmrem=new THREE.PMREMGenerator(renderer);
+    scene.environment=pmrem.fromScene(new RoomEnvironment()).texture; pmrem.dispose();
+    scene.add(new THREE.HemisphereLight(0xffffff,0xbbbbcc,3.0));
+
+    // Load model
+    const gltf = await loadModel(renderer);
+    let modelScene=null, mixer=null;
+    const TARGET_SC = 0.15;
+
+    if (gltf) {
+      modelScene = gltf.scene;
+      // Auto-scale based on bounding box
+      const box=new THREE.Box3().setFromObject(modelScene);
+      const size=box.getSize(new THREE.Vector3());
+      const maxDim=Math.max(size.x,size.y,size.z);
+      const sc = maxDim > 0 ? TARGET_SC / maxDim * 2 : TARGET_SC;
+      modelScene.scale.set(sc,sc,sc);
+      modelScene.visible=false;
+      if (gltf.animations?.length) {
+        mixer=new THREE.AnimationMixer(modelScene);
+        gltf.animations.forEach(c=>mixer.clipAction(c).play());
+      }
+    }
+
+    // Anchor for selected item index
+    const anchor = mindarThree.addAnchor(anchorIdx);
+    const tiltGroup = new THREE.Group();
+    tiltGroup.rotation.x = Math.PI/2;
+    anchor.group.add(tiltGroup);
+    if (modelScene) tiltGroup.add(modelScene);
+
+    let popAnim=null;
+    const BASE_SC = modelScene ? modelScene.scale.x : TARGET_SC;
+
+    // Pinch zoom
+    let lastPinch=null;
+    arDiv.addEventListener('touchstart',e=>{ if(e.touches.length===2) lastPinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); },{passive:true});
+    arDiv.addEventListener('touchmove',e=>{
+      if(e.touches.length===2&&lastPinch!==null){
+        const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+        window._arZoom.set(window._arZoom.get()*(d/lastPinch)); lastPinch=d;
+      }
+    },{passive:true});
+    arDiv.addEventListener('touchend',()=>{ lastPinch=null; },{passive:true});
+    arDiv.addEventListener('wheel',e=>{ e.preventDefault(); window._arZoom.set(window._arZoom.get()*(e.deltaY>0?0.92:1.08)); },{passive:false});
+
+    anchor.onTargetFound = () => {
+      if (modelScene) {
+        modelScene.visible=true;
+        modelScene.scale.set(0,0,0);
+        modelScene.rotation.set(0,-0.52,0);
+        popAnim={ start:performance.now(), duration:900 };
+      }
+      window.onTargetFound();
+    };
+    anchor.onTargetLost = () => {
+      if (modelScene) { modelScene.visible=false; popAnim=null; }
+      window.onTargetLost();
+    };
+
+    await mindarThree.start();
+    window.hideLoading();
+
+    const clock=new THREE.Clock();
+    renderer.setAnimationLoop(()=>{
+      const delta=clock.getDelta();
+      const baseScale=BASE_SC*window._arZoom.get();
+      if (mixer) mixer.update(delta);
+      if (modelScene&&modelScene.visible) {
+        if (popAnim) {
+          const t=Math.min((performance.now()-popAnim.start)/popAnim.duration,1);
+          const s=easeOutElastic(t)*baseScale;
+          modelScene.scale.set(s,s,s);
+          modelScene.rotation.y=-0.52*(1-t);
+          if(t>=1) popAnim=null;
+        } else {
+          modelScene.scale.set(baseScale,baseScale,baseScale);
+        }
+      }
+      renderer.render(scene,camera);
+    });
+
+  } catch(err) {
+    console.error('MindAR error:', err);
+    window.hideLoading();
+  }
 }
 </script>
 
