@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>3D Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js",
+      "three/examples/jsm/loaders/GLTFLoader.js":      "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/loaders/GLTFLoader.js",
+      "three/examples/jsm/loaders/DRACOLoader.js":     "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/loaders/DRACOLoader.js",
+      "three/examples/jsm/loaders/KTX2Loader.js":      "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/loaders/KTX2Loader.js",
+      "three/examples/jsm/controls/OrbitControls.js":  "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/controls/OrbitControls.js",
+      "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/environments/RoomEnvironment.js",
+      "three/examples/jsm/libs/meshopt_decoder.module.js":  "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/libs/meshopt_decoder.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- Resolve item data from URL params BEFORE module scripts -->
+  <script>
+  (function(){
+    var ALL_PAGES = [
+      { page:1,  c1:"#4CAF50", c2:"#1B5E20",
+        items:[
+          { stem:"anatra",   glb:"anatra.glb",   en:"Duck",    it:"Anatra",   fr:"Canard",       es:"Pato",     emoji:"🦆" },
+          { stem:"cane",     glb:"cane.glb",     en:"Dog",     it:"Cane",     fr:"Chien",        es:"Perro",    emoji:"🐕" },
+          { stem:"capra",    glb:"capra.glb",    en:"Goat",    it:"Capra",    fr:"Chèvre",       es:"Cabra",    emoji:"🐐" },
+          { stem:"gatto",    glb:"gatto.glb",    en:"Cat",     it:"Gatto",    fr:"Chat",         es:"Gato",     emoji:"🐱" },
+          { stem:"tacchino", glb:"tacchino.glb", en:"Turkey",  it:"Tacchino", fr:"Dinde",        es:"Pavo",     emoji:"🦃" },
+        ]},
+      { page:2,  c1:"#1565C0", c2:"#0D47A1",
+        items:[
+          { stem:"delfino",  glb:"delfino.glb",  en:"Dolphin", it:"Delfino",  fr:"Dauphin",      es:"Delfín",   emoji:"🐬" },
+          { stem:"granchio", glb:"granchio.glb", en:"Crab",    it:"Granchio", fr:"Crabe",        es:"Cangrejo", emoji:"🦀" },
+          { stem:"pesce",    glb:"pesce.glb",    en:"Fish",    it:"Pesce",    fr:"Poisson",      es:"Pez",      emoji:"🐟" },
+          { stem:"polpo",    glb:"polpo1.glb",   en:"Octopus", it:"Polpo",    fr:"Pieuvre",      es:"Pulpo",    emoji:"🐙" },
+          { stem:"squalo",   glb:"squalo.glb",   en:"Shark",   it:"Squalo",   fr:"Requin",       es:"Tiburón",  emoji:"🦈" },
+        ]},
+      { page:3,  c1:"#006064", c2:"#004D40",
+        items:[
+          { stem:"balena",             glb:"balena.glb",             en:"Whale",    it:"Balena",             fr:"Baleine",       es:"Ballena",          emoji:"🐋" },
+          { stem:"cavalluccio marino", glb:"cavalluccio_marino.glb", en:"Seahorse", it:"Cavalluccio Marino", fr:"Hippocampe",    es:"Caballito de Mar", emoji:"🐴" },
+          { stem:"medusa",             glb:"medusa.glb",             en:"Jellyfish",it:"Medusa",             fr:"Méduse",        es:"Medusa",           emoji:"🪼" },
+          { stem:"stella marina",      glb:"stella_marina.glb",      en:"Starfish", it:"Stella Marina",      fr:"Étoile de Mer", es:"Estrella de Mar",  emoji:"⭐" },
+          { stem:"tartaruga marina",   glb:"tartaruga.glb",          en:"Turtle",   it:"Tartaruga",          fr:"Tortue",        es:"Tortuga",          emoji:"🐢" },
+        ]},
+      { page:4,  c1:"#E65100", c2:"#BF360C",
+        items:[
+          { stem:"bufalo",   glb:"bufalo.glb",   en:"Buffalo", it:"Bufalo",   fr:"Buffle",    es:"Búfalo",   emoji:"🦬" },
+          { stem:"ghepardo", glb:"ghepardo.glb", en:"Cheetah", it:"Ghepardo", fr:"Guépard",   es:"Guepardo", emoji:"🐆" },
+          { stem:"iena",     glb:"iena.glb",     en:"Hyena",   it:"Iena",     fr:"Hyène",     es:"Hiena",    emoji:"🐕" },
+          { stem:"leopardo", glb:"leopardo.glb", en:"Leopard", it:"Leopardo", fr:"Léopard",   es:"Leopardo", emoji:"🐆" },
+          { stem:"suricato", glb:"suricato.glb", en:"Meerkat", it:"Suricato", fr:"Suricate",  es:"Suricata", emoji:"🦡" },
+        ]},
+      { page:5,  c1:"#F57F17", c2:"#E65100",
+        items:[
+          { stem:"elefante",    glb:"elefante.glb",    en:"Elephant",   it:"Elefante",    fr:"Éléphant",   es:"Elefante",    emoji:"🐘" },
+          { stem:"giraffa",     glb:"giraffa.glb",     en:"Giraffe",    it:"Giraffa",     fr:"Girafe",     es:"Jirafa",      emoji:"🦒" },
+          { stem:"leone",       glb:"leone.glb",       en:"Lion",       it:"Leone",       fr:"Lion",       es:"León",        emoji:"🦁" },
+          { stem:"rinoceronte", glb:"rinoceronte.glb", en:"Rhinoceros", it:"Rinoceronte", fr:"Rhinocéros", es:"Rinoceronte", emoji:"🦏" },
+          { stem:"zebra",       glb:"zebra.glb",       en:"Zebra",      it:"Zebra",       fr:"Zèbre",      es:"Cebra",       emoji:"🦓" },
+        ]},
+      { page:6,  c1:"#880E4F", c2:"#6A1B9A",
+        items:[
+          { stem:"aquilone",   glb:"aquilone.glb",   en:"Kite",      it:"Aquilone",   fr:"Cerf-volant",  es:"Cometa",    emoji:"🪁" },
+          { stem:"macchinina", glb:"macchinina.glb", en:"Toy Car",   it:"Macchinina", fr:"Voiture Jouet",es:"Cochecito", emoji:"🚗" },
+          { stem:"robot",      glb:"robot.glb",      en:"Robot",     it:"Robot",      fr:"Robot",        es:"Robot",     emoji:"🤖" },
+          { stem:"tamburo",    glb:"tamburo.glb",    en:"Drum",      it:"Tamburo",    fr:"Tambour",      es:"Tambor",    emoji:"🥁" },
+          { stem:"trenino",    glb:"trenino.glb",    en:"Toy Train", it:"Trenino",    fr:"Train Jouet",  es:"Trenecito", emoji:"🚂" },
+        ]},
+      { page:7,  c1:"#B71C1C", c2:"#880E0E",
+        items:[
+          { stem:"hamburger", glb:"hamburger.glb", en:"Hamburger", it:"Hamburger", fr:"Hamburger", es:"Hamburguesa", emoji:"🍔" },
+          { stem:"insalata",  glb:"insalata.glb",  en:"Salad",     it:"Insalata",  fr:"Salade",    es:"Ensalada",    emoji:"🥗" },
+          { stem:"panino",    glb:"panino.glb",    en:"Sandwich",  it:"Panino",    fr:"Sandwich",  es:"Bocadillo",   emoji:"🥪" },
+          { stem:"pasta",     glb:"pasta.glb",     en:"Pasta",     it:"Pasta",     fr:"Pâtes",     es:"Pasta",       emoji:"🍝" },
+          { stem:"pizza",     glb:"pizza.glb",     en:"Pizza",     it:"Pizza",     fr:"Pizza",     es:"Pizza",       emoji:"🍕" },
+        ]},
+      { page:8,  c1:"#33691E", c2:"#1B5E20",
+        items:[
+          { stem:"cavallo", glb:"cavallo.glb", en:"Horse", it:"Cavallo", fr:"Cheval",  es:"Caballo", emoji:"🐴" },
+          { stem:"gallina", glb:"gallina.glb", en:"Hen",   it:"Gallina", fr:"Poule",   es:"Gallina", emoji:"🐔" },
+          { stem:"maiale",  glb:"maiale.glb",  en:"Pig",   it:"Maiale",  fr:"Cochon",  es:"Cerdo",   emoji:"🐷" },
+          { stem:"mucca",   glb:"mucca.glb",   en:"Cow",   it:"Mucca",   fr:"Vache",   es:"Vaca",    emoji:"🐮" },
+          { stem:"pecora",  glb:"pecora.glb",  en:"Sheep", it:"Pecora",  fr:"Mouton",  es:"Oveja",   emoji:"🐑" },
+        ]},
+      { page:9,  c1:"#4E342E", c2:"#3E2723",
+        items:[
+          { stem:"bottiglialatte", glb:"bottiglialatte.glb", en:"Milk Bottle", it:"Bottiglia di Latte", fr:"Bouteille de Lait", es:"Botella de Leche", emoji:"🥛", noAudio:true },
+          { stem:"tazzina",        glb:"tazzina.glb",        en:"Coffee Cup",  it:"Tazzina",            fr:"Tasse à Café",      es:"Taza de Café",     emoji:"☕", noAudio:true },
+        ]},
+      { page:10, c1:"#4A148C", c2:"#38006b",
+        items:[
+          { stem:"arpa",        glb:"arpa.glb",        en:"Harp",      it:"Arpa",        fr:"Harpe",     es:"Arpa",      emoji:"🎼" },
+          { stem:"fisarmonica", glb:"fisarmonica.glb", en:"Accordion", it:"Fisarmonica", fr:"Accordéon", es:"Acordeón",  emoji:"🪗" },
+          { stem:"sassofono",   glb:"sax.glb",         en:"Saxophone", it:"Sassofono",   fr:"Saxophone", es:"Saxofón",   emoji:"🎷" },
+          { stem:"tamburo",     glb:"tamburo.glb",     en:"Drum",      it:"Tamburo",     fr:"Tambour",   es:"Tambor",    emoji:"🥁" },
+          { stem:"tromba",      glb:"tromba.glb",      en:"Trumpet",   it:"Tromba",      fr:"Trompette", es:"Trompeta",  emoji:"🎺" },
+        ]},
+      { page:11, c1:"#006064", c2:"#004D40",
+        items:[
+          { stem:"bambola",     glb:"bambola.glb",     en:"Doll",           it:"Bambola",     fr:"Poupée",           es:"Muñeca",          emoji:"🪆" },
+          { stem:"costruzioni", glb:"costruzioni.glb", en:"Building Blocks",it:"Costruzioni", fr:"Briques",          es:"Bloques",         emoji:"🧱" },
+          { stem:"orsacchiotto",glb:"orsacchiotto.glb",en:"Teddy Bear",     it:"Orsacchiotto",fr:"Ours en Peluche",  es:"Osito de Peluche",emoji:"🧸" },
+          { stem:"palla",       glb:"palla.glb",       en:"Ball",           it:"Palla",       fr:"Balle",            es:"Pelota",          emoji:"⚽" },
+          { stem:"puzzle",      glb:"puzzle.glb",      en:"Puzzle",         it:"Puzzle",      fr:"Puzzle",           es:"Rompecabezas",    emoji:"🧩" },
+        ]},
+      { page:12, c1:"#1A237E", c2:"#0D1B8E",
+        items:[
+          { stem:"camion",       glb:"camion.glb",       en:"Truck",      it:"Camion",       fr:"Camion",      es:"Camión",      emoji:"🚛" },
+          { stem:"elicottero",   glb:"elicottero.glb",   en:"Helicopter", it:"Elicottero",   fr:"Hélicoptère", es:"Helicóptero", emoji:"🚁" },
+          { stem:"motocicletta", glb:"motocilcetta.glb", en:"Motorcycle", it:"Motocicletta", fr:"Moto",        es:"Moto",        emoji:"🏍️" },
+          { stem:"taxi",         glb:"taxi.glb",         en:"Taxi",       it:"Taxi",         fr:"Taxi",        es:"Taxi",        emoji:"🚕" },
+          { stem:"treno",        glb:"treno.glb",        en:"Train",      it:"Treno",        fr:"Train",       es:"Tren",        emoji:"🚂" },
+        ]},
+      { page:13, c1:"#311B92", c2:"#4527A0",
+        items:[
+          { stem:"chitarra",   glb:"chitarra.glb",   en:"Guitar",    it:"Chitarra",   fr:"Guitare",       es:"Guitarra", emoji:"🎸" },
+          { stem:"flauto",     glb:"flauto.glb",     en:"Flute",     it:"Flauto",     fr:"Flûte",         es:"Flauta",   emoji:"🎶" },
+          { stem:"grancassa",  glb:"grancassa.glb",  en:"Bass Drum", it:"Grancassa",  fr:"Grosse Caisse", es:"Bombo",    emoji:"🥁" },
+          { stem:"pianoforte", glb:"pianoforte1.glb",en:"Piano",     it:"Pianoforte", fr:"Piano",         es:"Piano",    emoji:"🎹" },
+          { stem:"violino",    glb:"violino.glb",    en:"Violin",    it:"Violino",    fr:"Violon",        es:"Violín",   emoji:"🎻" },
+        ]},
+      { page:14, c1:"#880E4F", c2:"#C2185B",
+        items:[
+          { stem:"camicia",   glb:"camicia.glb",   en:"Shirt",    it:"Camicia",   fr:"Chemise",    es:"Camisa",   emoji:"👕" },
+          { stem:"cappello",  glb:"cappello.glb",  en:"Hat",      it:"Cappello",  fr:"Chapeau",    es:"Sombrero", emoji:"🎩" },
+          { stem:"pantalone", glb:"pantaloni.glb", en:"Trousers", it:"Pantaloni", fr:"Pantalon",   es:"Pantalón", emoji:"👖" },
+          { stem:"scarpe",    glb:"scarpe.glb",    en:"Shoes",    it:"Scarpe",    fr:"Chaussures", es:"Zapatos",  emoji:"👟" },
+          { stem:"vestito",   glb:"vestito.glb",   en:"Dress",    it:"Vestito",   fr:"Robe",       es:"Vestido",  emoji:"👗" },
+        ]},
+      { page:15, c1:"#01579B", c2:"#006494",
+        items:[
+          { stem:"aereo",      glb:"aereo.glb",      en:"Airplane", it:"Aereo",      fr:"Avion",   es:"Avión",     emoji:"✈️" },
+          { stem:"automobile", glb:"automobile.glb", en:"Car",      it:"Automobile", fr:"Voiture", es:"Coche",     emoji:"🚗" },
+          { stem:"barca",      glb:"barca.glb",      en:"Boat",     it:"Barca",      fr:"Bateau",  es:"Barco",     emoji:"⛵" },
+          { stem:"bicicletta", glb:"bicicletta.glb", en:"Bicycle",  it:"Bicicletta", fr:"Vélo",    es:"Bicicleta", emoji:"🚲" },
+          { stem:"autobus",    glb:"pullman.glb",    en:"Bus",      it:"Pullman",    fr:"Autobus", es:"Autobús",   emoji:"🚌" },
+        ]},
+    ];
+
+    function enc(s){ return s.replace(/ /g,'%20'); }
+    var sp = new URLSearchParams(location.search);
+    var pg  = parseInt(sp.get('page')) || 1;
+    var idx = parseInt(sp.get('idx'))  || 0;
+    var pd  = ALL_PAGES.find(function(p){ return p.page === pg; }) || ALL_PAGES[0];
+    var item = pd.items[Math.min(idx, pd.items.length-1)];
+
+    // Model path
+    var modelPath = enc('../3d/pagina ' + pg + '/' + item.glb);
+
+    // Audio paths (if not page 9 / noAudio)
+    function audioPath(lang) {
+      var folder = { en:'inglese', it:'italiano', fr:'francese', es:'spagnolo' }[lang];
+      var code   = { en:'EN',     it:'IT',       fr:'FR',       es:'ES'      }[lang];
+      var stem   = item.stem;
+      var file   = stem + '_' + code + '.mp3';
+      if (pg === 1) {
+        return enc('../Pagina 1/audio/' + folder + '/' + file);
+      } else {
+        return enc('../AUDIO LIBRO INGLESE/pagina ' + pg + '/' + folder + '/' + file);
+      }
+    }
+
+    window._ITEM = item;
+    window._PAGE = pg;
+    window._IDX  = idx;
+    window._C1   = pd.c1;
+    window._C2   = pd.c2;
+    window._MODEL = modelPath;
+    window._AUDIO = item.noAudio ? null : {
+      en: audioPath('en'),
+      it: audioPath('it'),
+      fr: audioPath('fr'),
+      es: audioPath('es'),
+    };
+    window._isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  })();
+  </script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      width:100%; height:100%; overflow:hidden;
+      background: linear-gradient(160deg, #0A1628 0%, #15082E 50%, #08202E 100%);
+      font-family: 'Nunito', sans-serif;
+    }
+
+    /* 3D CANVAS */
+    #viewer { position:fixed; inset:0; z-index:0; }
+    #viewer canvas { display:block; width:100%!important; height:100%!important; }
+
+    /* LOADING */
+    #loading-screen {
+      position:fixed; inset:0; z-index:200;
+      background: linear-gradient(160deg, #0A1628, #15082E, #08202E);
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      transition: opacity 0.6s ease;
+    }
+    #loading-screen.fade-out { opacity:0; pointer-events:none; }
+    .loading-emoji { font-size:5rem; animation: loadBounce 0.8s ease-in-out infinite; }
+    @keyframes loadBounce { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-14px) scale(1.1)} }
+    .loading-text { font-family:'Fredoka One',cursive; font-size:1.5rem; color:white; margin-top:1rem; }
+    .loading-sub  { color:rgba(255,255,255,0.5); font-size:0.9rem; margin-top:0.3rem; }
+    .loading-bar-wrap { width:220px; height:8px; background:rgba(255,255,255,0.12); border-radius:4px; margin-top:1.5rem; overflow:hidden; }
+    .loading-bar { height:100%; border-radius:4px; animation:loadFill 4s ease-in-out forwards; }
+    @keyframes loadFill { 0%{width:0%} 80%{width:90%} 100%{width:100%} }
+
+    /* ── TOP BAR ── */
+    #top-bar {
+      position:fixed; top:0; left:0; right:0; z-index:100;
+      padding:0.9rem 1rem;
+      display:flex; align-items:center; gap:0.8rem;
+      background:linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+      pointer-events:none;
+    }
+    #top-bar > * { pointer-events:all; }
+    #back-btn {
+      background:rgba(255,255,255,0.18); backdrop-filter:blur(10px);
+      border:2px solid rgba(255,255,255,0.28); border-radius:50%;
+      width:44px; height:44px; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:white; font-size:1.4rem;
+      text-decoration:none; flex-shrink:0;
+      transition:all 0.2s ease;
+    }
+    #back-btn:hover  { background:rgba(255,255,255,0.3); transform:scale(1.1); }
+    #back-btn:active { transform:scale(0.9); }
+    #item-emoji-badge {
+      font-size:2.2rem; flex-shrink:0;
+      filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5));
+      animation:badgePop 0.5s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes badgePop { from{transform:scale(0) rotate(-20deg)} to{transform:scale(1) rotate(0)} }
+    #item-info { flex:1; min-width:0; }
+    #item-name-en {
+      font-family:'Fredoka One',cursive; font-size:1.7rem; color:white;
+      text-shadow:0 2px 8px rgba(0,0,0,0.6); line-height:1; white-space:nowrap;
+      overflow:hidden; text-overflow:ellipsis;
+    }
+    #item-name-sub { font-size:0.72rem; color:rgba(255,255,255,0.55); margin-top:2px; }
+
+    /* HINT */
+    #rotate-hint {
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      z-index:50; pointer-events:none; text-align:center;
+      opacity:1; transition:opacity 1s ease;
+    }
+    #rotate-hint.hide { opacity:0; }
+    .hint-card {
+      background:rgba(255,255,255,0.1); backdrop-filter:blur(14px);
+      border:1.5px solid rgba(255,255,255,0.2); border-radius:1.5rem;
+      padding:1rem 1.8rem; color:white;
+    }
+    .hint-icon { font-size:2.5rem; display:block; animation:hintSpin 2s ease-in-out infinite; }
+    @keyframes hintSpin { 0%,100%{transform:rotate(-15deg)} 50%{transform:rotate(15deg)} }
+    .hint-text { font-family:'Fredoka One',cursive; font-size:1rem; margin-top:0.4rem; }
+
+    /* ── LANGUAGE SELECTOR ── */
+    #lang-selector {
+      position:fixed; bottom:130px; left:50%; transform:translateX(-50%);
+      z-index:100;
+      display:flex; gap:0.5rem;
+      background:rgba(255,255,255,0.1); backdrop-filter:blur(16px);
+      border:1.5px solid rgba(255,255,255,0.2); border-radius:3rem;
+      padding:0.4rem;
+    }
+    .lang-btn {
+      padding:0.45rem 1rem; border-radius:2rem; border:none; cursor:pointer;
+      font-family:'Fredoka One',cursive; font-size:0.9rem; font-weight:700;
+      color:rgba(255,255,255,0.6);
+      background:transparent;
+      transition:all 0.2s ease;
+      display:flex; align-items:center; gap:0.3rem;
+    }
+    .lang-btn.active {
+      background:white; color:#0B1A4A;
+      box-shadow:0 4px 14px rgba(0,0,0,0.3);
+    }
+    .lang-btn:active { transform:scale(0.93); }
+
+    /* ── AUDIO / PLAY BUTTON ── */
+    #audio-wrap {
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      z-index:100; text-align:center;
+    }
+    #play-btn {
+      width:88px; height:88px; border-radius:50%; border:none; cursor:pointer;
+      font-size:2.2rem; display:flex; align-items:center; justify-content:center;
+      box-shadow:0 8px 30px rgba(0,0,0,0.5);
+      transition:transform 0.15s; animation:pulseShadow 2.5s ease-in-out infinite;
+    }
+    @keyframes pulseShadow {
+      0%  { box-shadow:0 8px 30px rgba(0,0,0,0.5), 0 0 0 0px rgba(255,255,255,0.35); }
+      50% { box-shadow:0 8px 30px rgba(0,0,0,0.5), 0 0 0 18px rgba(255,255,255,0); }
+      100%{ box-shadow:0 8px 30px rgba(0,0,0,0.5), 0 0 0 0px rgba(255,255,255,0); }
+    }
+    #play-btn:active { transform:scale(0.88); }
+    #play-btn.playing { animation:playingPulse 0.5s ease-in-out infinite alternate; }
+    @keyframes playingPulse { from{transform:scale(1)} to{transform:scale(1.08)} }
+    .play-label {
+      font-family:'Fredoka One',cursive; color:white; font-size:0.85rem;
+      margin-top:0.4rem; text-shadow:0 2px 6px rgba(0,0,0,0.6);
+    }
+
+    /* No audio message */
+    #no-audio-msg {
+      position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+      z-index:100; background:rgba(255,255,255,0.12); backdrop-filter:blur(10px);
+      border:1.5px solid rgba(255,255,255,0.2); border-radius:1rem;
+      padding:0.6rem 1.4rem; color:white; font-size:0.85rem; text-align:center;
+      display:none; white-space:nowrap;
+    }
+
+    /* ── ZOOM BUTTONS ── */
+    #zoom-btns {
+      position:fixed; right:16px; top:50%; transform:translateY(-50%);
+      z-index:100; display:flex; flex-direction:column; gap:10px;
+    }
+    .zoom-btn {
+      width:50px; height:50px; border-radius:50%;
+      border:2px solid rgba(255,255,255,0.3);
+      background:rgba(255,255,255,0.15); backdrop-filter:blur(10px);
+      color:white; font-size:1.8rem; font-weight:700; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 4px 16px rgba(0,0,0,0.4);
+      transition:transform 0.15s, background 0.15s; line-height:1;
+    }
+    .zoom-btn:active { transform:scale(0.88); background:rgba(255,255,255,0.3); }
+
+    /* ── FLOOR AR BUTTON ── */
+    #floor-btn-wrap {
+      position:fixed; left:16px; top:50%; transform:translateY(-50%);
+      z-index:100;
+    }
+    .floor-btn {
+      width:54px; padding:0.55rem 0; border-radius:1.6rem;
+      border:2px solid rgba(255,255,255,0.3);
+      background:rgba(255,255,255,0.15); backdrop-filter:blur(10px);
+      color:white; cursor:pointer; display:flex; flex-direction:column;
+      align-items:center; gap:2px;
+      box-shadow:0 4px 16px rgba(0,0,0,0.4);
+      transition:transform 0.15s, background 0.15s;
+    }
+    .floor-btn:active { transform:scale(0.88); background:rgba(255,255,255,0.3); }
+    .floor-btn-icon  { font-size:1.5rem; line-height:1; }
+    .floor-btn-label { font-family:'Fredoka One',cursive; font-size:0.57rem; color:rgba(255,255,255,0.85); line-height:1; text-align:center; }
+
+    /* SPARKLES */
+    #sparkle-overlay { position:fixed; inset:0; pointer-events:none; z-index:90; overflow:hidden; }
+    .spark { position:absolute; pointer-events:none; animation:sparkFly var(--dur) ease-out forwards; font-size:var(--sz); }
+    @keyframes sparkFly {
+      0%   { transform:translate(0,0) scale(0) rotate(0deg); opacity:1; }
+      60%  { opacity:1; }
+      100% { transform:translate(var(--dx),var(--dy)) scale(1) rotate(var(--rot)); opacity:0; }
+    }
+
+    /* NAMES BOTTOM PANEL */
+    #names-panel {
+      position:fixed; bottom:225px; left:50%; transform:translateX(-50%);
+      z-index:100; text-align:center;
+      pointer-events:none;
+    }
+    .name-en-big {
+      font-family:'Fredoka One',cursive; font-size:1.5rem; color:white;
+      text-shadow:0 3px 10px rgba(0,0,0,0.5);
+    }
+    .names-row {
+      display:flex; gap:0.8rem; justify-content:center;
+      margin-top:0.3rem; flex-wrap:wrap;
+    }
+    .name-chip {
+      background:rgba(255,255,255,0.12); backdrop-filter:blur(8px);
+      border:1px solid rgba(255,255,255,0.2); border-radius:1.5rem;
+      padding:0.25rem 0.7rem; font-size:0.75rem; color:rgba(255,255,255,0.75);
+    }
+    .name-chip.hl { background:rgba(255,255,255,0.25); color:white; }
+  </style>
+</head>
+<body>
+
+<div id="viewer"></div>
+
+<div id="loading-screen">
+  <div class="loading-emoji" id="loading-emoji">✨</div>
+  <div class="loading-text" id="loading-text">Loading…</div>
+  <div class="loading-sub">Preparing your 3D model</div>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar" id="loading-bar"></div>
+  </div>
+</div>
+
+<!-- Rotate hint (disappears after first interaction) -->
+<div id="rotate-hint">
+  <div class="hint-card">
+    <span class="hint-icon">🖐</span>
+    <div class="hint-text">Drag to rotate · Pinch to zoom</div>
+  </div>
+</div>
+
+<div id="sparkle-overlay"></div>
+
+<!-- TOP BAR -->
+<div id="top-bar">
+  <a id="back-btn" href="#">←</a>
+  <div id="item-emoji-badge">✨</div>
+  <div id="item-info">
+    <div id="item-name-en">Loading</div>
+    <div id="item-name-sub">🌍 4 languages available</div>
+  </div>
+</div>
+
+<!-- NAMES -->
+<div id="names-panel">
+  <div class="name-en-big" id="name-en-big"></div>
+  <div class="names-row" id="names-row"></div>
+</div>
+
+<!-- LANGUAGE SELECTOR -->
+<div id="lang-selector">
+  <button class="lang-btn active" data-lang="en" onclick="selectLang('en')">🇬🇧 EN</button>
+  <button class="lang-btn" data-lang="it" onclick="selectLang('it')">🇮🇹 IT</button>
+  <button class="lang-btn" data-lang="fr" onclick="selectLang('fr')">🇫🇷 FR</button>
+  <button class="lang-btn" data-lang="es" onclick="selectLang('es')">🇪🇸 ES</button>
+</div>
+
+<!-- AUDIO -->
+<div id="audio-wrap">
+  <button id="play-btn" onclick="playAudio()">🔊</button>
+  <div class="play-label" id="play-label">Listen!</div>
+</div>
+<div id="no-audio-msg">🔇 No audio available</div>
+
+<!-- ZOOM -->
+<div id="zoom-btns">
+  <button class="zoom-btn" onclick="doZoom(1.25)">+</button>
+  <button class="zoom-btn" onclick="doZoom(0.8)">−</button>
+</div>
+
+<!-- FLOOR AR -->
+<div id="floor-btn-wrap">
+  <button class="floor-btn" onclick="launchFloorAR()">
+    <span class="floor-btn-icon">🌍</span>
+    <span class="floor-btn-label">Floor AR</span>
+  </button>
+</div>
+
+<!-- UI LOGIC (classic script, global vars) -->
+<script>
+var item    = window._ITEM || {};
+var pageNum = window._PAGE || 1;
+var c1      = window._C1  || '#7C3AED';
+var c2      = window._C2  || '#5B21B6';
+var audios  = window._AUDIO;
+var curLang = 'en';
+var audioEl = null;
+
+// Populate UI
+document.getElementById('loading-emoji').textContent = item.emoji || '✨';
+document.getElementById('loading-text').textContent  = item.en   || 'Loading…';
+document.getElementById('loading-bar').style.background = 'linear-gradient(90deg,'+c1+','+c2+')';
+document.getElementById('item-emoji-badge').textContent = item.emoji || '';
+document.getElementById('item-name-en').textContent     = item.en    || '';
+document.getElementById('name-en-big').textContent      = item.en    || '';
+document.getElementById('back-btn').href = 'page.html?page=' + pageNum;
+
+// Names chips
+var namesRow = document.getElementById('names-row');
+var chips = [
+  { lang:'it', flag:'🇮🇹', name: item.it },
+  { lang:'fr', flag:'🇫🇷', name: item.fr },
+  { lang:'es', flag:'🇪🇸', name: item.es },
+];
+chips.forEach(function(c){
+  if (!c.name) return;
+  var chip = document.createElement('span');
+  chip.className = 'name-chip';
+  chip.id = 'chip-' + c.lang;
+  chip.textContent = c.flag + ' ' + c.name;
+  namesRow.appendChild(chip);
+});
+
+var playBtn   = document.getElementById('play-btn');
+var playLabel = document.getElementById('play-label');
+playBtn.style.background = 'linear-gradient(135deg,' + c1 + ',' + c2 + ')';
+
+if (audios) {
+  audioEl = new Audio(audios['en']);
+  audioEl.preload = 'auto';
+} else {
+  document.getElementById('audio-wrap').style.display = 'none';
+  document.getElementById('lang-selector').style.display = 'none';
+  document.getElementById('no-audio-msg').style.display = 'block';
+}
+
+function selectLang(lang) {
+  curLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  // Highlight matching chip
+  document.querySelectorAll('.name-chip').forEach(function(c){ c.classList.remove('hl'); });
+  var hl = document.getElementById('chip-' + lang);
+  if (hl) hl.classList.add('hl');
+  // Update name display
+  var names = { en: item.en, it: item.it, fr: item.fr, es: item.es };
+  document.getElementById('name-en-big').textContent = names[lang] || item.en;
+  // Preload audio for selected lang
+  if (audios && audios[lang]) {
+    if (audioEl) { audioEl.pause(); audioEl.src = audios[lang]; audioEl.load(); }
+    else { audioEl = new Audio(audios[lang]); audioEl.preload = 'auto'; }
+  }
+}
+
+function playAudio() {
+  if (!audioEl) return;
+  playBtn.classList.add('playing');
+  setTimeout(function(){ playBtn.classList.remove('playing'); }, 1500);
+  audioEl.currentTime = 0;
+  audioEl.play().catch(function(e){ console.warn('Audio error:', e); });
+  // Note sparkles
+  var rect = playBtn.getBoundingClientRect();
+  var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  var notes = ['🎵','🎶','♪','♫','✨'];
+  for (var i = 0; i < 14; i++) {
+    (function(i){
+      var s = document.createElement('div');
+      s.className = 'spark';
+      var angle = Math.PI*2*i/14;
+      var dist  = 45 + Math.random()*70;
+      s.textContent = notes[Math.floor(Math.random()*notes.length)];
+      s.style.cssText = 'left:'+cx+'px;top:'+cy+'px;'
+        +'--dur:0.7s;--sz:1.1rem;'
+        +'--dx:'+(Math.cos(angle)*dist).toFixed(0)+'px;'
+        +'--dy:'+(Math.sin(angle)*dist).toFixed(0)+'px;--rot:0deg;';
+      document.getElementById('sparkle-overlay').appendChild(s);
+      setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); }, 800);
+    })(i);
+  }
+}
+
+function doZoom(factor) {
+  if (window._orbitControls) {
+    var ctrl = window._orbitControls;
+    ctrl.object.position.multiplyScalar(1/factor);
+    ctrl.update();
+  }
+}
+
+function launchFloorAR() {
+  var glb  = window._ITEM && window._ITEM.glb;
+  var stem = glb ? glb.replace('.glb','') : 'item';
+  var pg   = window._PAGE || 1;
+  location.href = 'floor-ar.html?page=' + pg + '&glb=' + encodeURIComponent(glb || '');
+}
+
+// Hint: hide on first interaction
+var hintHidden = false;
+function hideHint() {
+  if (hintHidden) return;
+  hintHidden = true;
+  document.getElementById('rotate-hint').classList.add('hide');
+}
+['touchstart','mousedown','wheel'].forEach(function(ev){
+  document.addEventListener(ev, hideHint, { once:true, passive:true });
+});
+setTimeout(hideHint, 5000);
+
+// Loading
+var loadingHidden = false;
+function hideLoading() {
+  if (loadingHidden) return;
+  loadingHidden = true;
+  var ls = document.getElementById('loading-screen');
+  ls.classList.add('fade-out');
+  setTimeout(function(){ if (ls && ls.parentNode) ls.parentNode.removeChild(ls); }, 750);
+}
+window.hideLoading = hideLoading;
+setTimeout(hideLoading, 15000); // safety fallback
+</script>
+
+<!-- THREE.JS 3D VIEWER (ES module) -->
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+
+try {
+  const container = document.getElementById('viewer');
+  const W = window.innerWidth, H = window.innerHeight;
+
+  // Renderer
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping    = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
+  container.appendChild(renderer.domElement);
+
+  // Scene with gradient background (via CSS, renderer is opaque)
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#0A1628');
+
+  // Camera
+  const camera = new THREE.PerspectiveCamera(45, W/H, 0.01, 1000);
+  camera.position.set(0, 0.5, 4);
+
+  // Environment (IBL for PBR materials)
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmrem.dispose();
+
+  // Lights
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 2.5));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+  dirLight.position.set(4, 8, 5);
+  scene.add(dirLight);
+
+  // Orbit controls
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping   = true;
+  controls.dampingFactor   = 0.06;
+  controls.autoRotate      = true;
+  controls.autoRotateSpeed = 1.2;
+  controls.minDistance     = 0.5;
+  controls.maxDistance     = 20;
+  controls.target.set(0, 0, 0);
+  window._orbitControls = controls;
+
+  // Pause auto-rotate on user interaction
+  controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+  // Load model
+  let mixer = null;
+  const modelPath = window._MODEL;
+
+  const ktx2 = new KTX2Loader()
+    .setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/libs/basis/')
+    .detectSupport(renderer);
+
+  try {
+    await MeshoptDecoder.ready;
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
+    loader.setKTX2Loader(ktx2);
+
+    const gltf = await new Promise((resolve, reject) => {
+      loader.load(modelPath, resolve, undefined, reject);
+    });
+
+    const model = gltf.scene;
+
+    // Center and auto-scale model
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size   = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale  = 2.2 / maxDim;
+    model.scale.setScalar(scale);
+    model.position.copy(center).negate().multiplyScalar(scale);
+    model.position.y -= size.y * scale * 0.1; // slight downward shift
+
+    // Pop-in animation
+    model.scale.setScalar(0);
+    scene.add(model);
+
+    // Animations
+    if (gltf.animations?.length) {
+      mixer = new THREE.AnimationMixer(model);
+      gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+    }
+
+    // Animate scale pop
+    let popStart = performance.now();
+    const POP_DUR = 900;
+    function easeOutElastic(t) {
+      if (t <= 0) return 0; if (t >= 1) return 1;
+      const p = 0.3;
+      return Math.pow(2,-10*t)*Math.sin((t-p/4)*(2*Math.PI)/p)+1;
+    }
+
+    // Camera to fit model nicely
+    const fitDist = Math.max(2.0, maxDim * scale * 1.8);
+    camera.position.set(0, maxDim*scale*0.15, fitDist);
+    controls.maxDistance = fitDist * 5;
+
+    window.hideLoading();
+
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      const delta = clock.getDelta();
+      if (mixer) mixer.update(delta);
+      controls.update();
+
+      // Pop animation
+      const t = Math.min((performance.now() - popStart) / POP_DUR, 1);
+      model.scale.setScalar(easeOutElastic(t) * scale);
+
+      renderer.render(scene, camera);
+    });
+
+  } catch(e) {
+    console.warn('Model load failed:', e);
+    window.hideLoading();
+    // Add placeholder
+    const geo = new THREE.SphereGeometry(1, 32, 32);
+    const mat = new THREE.MeshStandardMaterial({ color: window._C1 || '#7C3AED', roughness:0.4, metalness:0.3 });
+    scene.add(new THREE.Mesh(geo, mat));
+    const clock2 = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      controls.update();
+      renderer.render(scene, camera);
+    });
+  }
+
+  // Resize
+  window.addEventListener('resize', () => {
+    const W2 = window.innerWidth, H2 = window.innerHeight;
+    camera.aspect = W2/H2;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W2, H2);
+  });
+
+} catch(err) {
+  console.error('3D init error:', err);
+  window.hideLoading();
+}
+</script>
+
+</body>
+</html>

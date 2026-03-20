@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Floor AR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+
+  <script>
+  (function(){
+    var sp   = new URLSearchParams(location.search);
+    var pg   = parseInt(sp.get('page')) || 1;
+    var glb  = sp.get('glb') || '';
+    window._PAGE = pg;
+    window._GLB  = glb;
+    window._isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    function enc(s){ return s.replace(/ /g,'%20'); }
+    window._GLB_PATH  = enc('../3d/pagina ' + pg + '/' + glb);
+  })();
+  </script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body {
+      width:100%; height:100%; overflow:hidden;
+      background: linear-gradient(160deg, #0A1628, #15082E, #08202E);
+      font-family:'Nunito',sans-serif;
+    }
+    #back-btn {
+      position:fixed; top:1rem; left:1rem; z-index:300;
+      background:rgba(255,255,255,0.15); backdrop-filter:blur(10px);
+      border:2px solid rgba(255,255,255,0.25); border-radius:50%;
+      width:44px; height:44px; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:white; font-size:1.4rem; text-decoration:none;
+      transition:transform 0.15s;
+    }
+    #back-btn:active { transform:scale(0.9); }
+
+    #tap-screen {
+      position:fixed; inset:0; z-index:10;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+    }
+    #ar-link {
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      width:100%; height:100%;
+      text-decoration:none; color:white;
+    }
+    #ar-link img { display:none; }
+    .tap-emoji { font-size:6rem; animation:bounce 1s ease-in-out infinite; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+    .tap-title { font-family:'Fredoka One',cursive; font-size:1.8rem; margin-top:0.8rem; }
+    .tap-card {
+      margin-top:2rem;
+      background:rgba(255,255,255,0.1); backdrop-filter:blur(14px);
+      border:2px solid rgba(255,255,255,0.2); border-radius:2rem;
+      padding:1.2rem 2.2rem; text-align:center;
+    }
+    .tap-card-title { font-family:'Fredoka One',cursive; font-size:1.1rem; line-height:1.4; }
+    .tap-card-sub   { font-size:0.85rem; color:rgba(255,255,255,0.6); margin-top:0.3rem; }
+    .tap-pulse { animation:pulse 1.8s ease-in-out infinite; display:inline-block; margin-top:1.6rem; font-size:2.5rem; }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.25)} }
+
+    #fallback-screen {
+      display:none; position:fixed; inset:0; z-index:10;
+      flex-direction:column; align-items:center; justify-content:center;
+      gap:1rem; padding:2rem; text-align:center; color:white;
+    }
+    .fb-emoji { font-size:3.5rem; }
+    .fb-title { font-family:'Fredoka One',cursive; font-size:1.5rem; }
+    .fb-sub   { color:rgba(255,255,255,0.55); font-size:0.9rem; line-height:1.5; }
+    .fb-back-btn {
+      margin-top:1rem;
+      background:rgba(255,255,255,0.15); backdrop-filter:blur(10px);
+      border:2px solid rgba(255,255,255,0.25); border-radius:2rem;
+      padding:0.6rem 1.6rem; color:white; font-family:'Fredoka One',cursive;
+      font-size:1rem; cursor:pointer; text-decoration:none;
+    }
+  </style>
+</head>
+<body>
+
+<a id="back-btn" href="#">←</a>
+
+<div id="tap-screen">
+  <a id="ar-link" href="#">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII=" alt="">
+    <div class="tap-emoji">🌍</div>
+    <div class="tap-title">Place in your world!</div>
+    <div class="tap-card">
+      <div class="tap-card-title">Tap to launch AR</div>
+      <div class="tap-card-sub" id="tap-sub">Point at the floor to place the 3D object</div>
+    </div>
+    <span class="tap-pulse">👆</span>
+  </a>
+</div>
+
+<div id="fallback-screen">
+  <div class="fb-emoji" id="fb-emoji">❌</div>
+  <div class="fb-title" id="fb-title">AR not available</div>
+  <div class="fb-sub"   id="fb-sub"></div>
+  <a id="fb-back" href="#" class="fb-back-btn">← Go back</a>
+</div>
+
+<script>
+var pg  = window._PAGE || 1;
+var glb = window._GLB  || '';
+
+document.getElementById('back-btn').addEventListener('click', function(e){
+  e.preventDefault();
+  history.back();
+});
+document.getElementById('fb-back').addEventListener('click', function(e){
+  e.preventDefault();
+  history.back();
+});
+
+function showFallback(emoji, title, sub) {
+  document.getElementById('tap-screen').style.display = 'none';
+  var fb = document.getElementById('fallback-screen');
+  fb.style.display = 'flex';
+  document.getElementById('fb-emoji').textContent = emoji;
+  document.getElementById('fb-title').textContent = title;
+  document.getElementById('fb-sub').textContent   = sub;
+}
+
+var arLink = document.getElementById('ar-link');
+
+if (window._isIOS) {
+  // iOS Quick Look (only works with .usdz — GLB not supported on iOS AR)
+  showFallback('🍎', 'iOS AR not configured',
+    'Floor AR on iOS requires a .usdz model.\nUse an Android device for GLB-based AR.');
+} else {
+  // Android: Google Scene Viewer via intent URL
+  var origin  = location.origin;
+  var glbAbs  = origin + '/3d/pagina%20' + pg + '/' + encodeURIComponent(glb);
+  var fallback = encodeURIComponent(location.href);
+  var glbEnc   = encodeURIComponent(glbAbs);
+
+  var intentUrl =
+    'intent://arvr.google.com/scene-viewer/1.0' +
+    '?file=' + glbEnc +
+    '&mode=ar_preferred' +
+    '#Intent;scheme=https' +
+    ';package=com.google.android.googlequicksearchbox' +
+    ';action=android.intent.action.VIEW' +
+    ';S.browser_fallback_url=' + fallback +
+    ';end;';
+
+  arLink.href = intentUrl;
+  document.getElementById('tap-sub').textContent =
+    'Requires ARCore — point at floor and tap to place';
+}
+</script>
+</body>
+</html>

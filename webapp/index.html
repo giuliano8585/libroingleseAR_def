@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Magic English Book ✨</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --accent: #7C3AED; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(160deg, #0B1A4A 0%, #1B0B45 45%, #0A2640 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* STARS */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 8% 12%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(2px 2px at 42% 8%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 55%, rgba(255,255,255,0.35) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 75% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 88% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(2px 2px at 15% 75%, rgba(255,255,255,0.45) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 88%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 92% 42%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 62%, rgba(255,255,255,0.35) 0%, transparent 100%);
+      pointer-events: none;
+      animation: twinkle 5s ease-in-out infinite alternate;
+      z-index: 0;
+    }
+    @keyframes twinkle {
+      from { opacity: 0.6; }
+      to   { opacity: 1; }
+    }
+
+    /* SPLASH */
+    #splash {
+      position: fixed; inset: 0; z-index: 9999;
+      background: linear-gradient(160deg, #0B1A4A, #1B0B45, #0A2640);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      animation: splashExit 0.7s ease-in-out 2.6s both;
+    }
+    @keyframes splashExit { to { opacity:0; pointer-events:none; visibility:hidden; } }
+    .splash-logo {
+      font-size: 5.5rem;
+      animation: splashBounce 0.7s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes splashBounce {
+      from { transform:scale(0) rotate(-40deg); opacity:0; }
+      to   { transform:scale(1) rotate(0deg);   opacity:1; }
+    }
+    .splash-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 2.4rem; color: white; margin-top: 1rem;
+      animation: fadeUp 0.5s ease 0.5s both;
+    }
+    .splash-sub {
+      color: rgba(255,255,255,0.65); font-size: 1rem; margin-top: 0.4rem;
+      animation: fadeUp 0.5s ease 0.8s both;
+    }
+    .splash-dots {
+      margin-top: 2rem; display:flex; gap:0.5rem;
+      animation: fadeUp 0.5s ease 1s both;
+    }
+    .dot {
+      width:12px; height:12px; background:white; border-radius:50%;
+      animation: dotPulse 0.8s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.15s; }
+    .dot:nth-child(3) { animation-delay: 0.30s; }
+    @keyframes dotPulse { 0%,100%{transform:scale(1);opacity:0.4} 50%{transform:scale(1.5);opacity:1} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+    /* HEADER */
+    header {
+      position: relative; z-index: 10;
+      text-align: center;
+      padding: 2.5rem 1rem 0.5rem;
+    }
+    .header-badge {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 3rem;
+      padding: 0.5rem 1.4rem;
+      font-size: 0.8rem; color: rgba(255,255,255,0.6);
+      letter-spacing: 0.12em; text-transform: uppercase;
+      animation: fadeUp 0.5s ease 0.2s both;
+    }
+    .header-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      margin-top: 0.8rem; line-height: 1;
+      background: linear-gradient(135deg, #fff 30%, #A78BFA 70%, #60A5FA 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: fadeUp 0.5s ease 0.3s both;
+      text-shadow: none;
+    }
+    .header-sub {
+      color: rgba(255,255,255,0.55); font-size: 1rem;
+      margin-top: 0.4rem;
+      animation: fadeUp 0.5s ease 0.4s both;
+    }
+    .lang-pills {
+      display: flex; gap: 0.5rem; justify-content: center;
+      margin-top: 1rem;
+      animation: fadeUp 0.5s ease 0.5s both;
+    }
+    .lang-pill {
+      background: rgba(255,255,255,0.1);
+      border: 1.5px solid rgba(255,255,255,0.2);
+      border-radius: 2rem; padding: 0.3rem 0.9rem;
+      font-size: 0.8rem; color: rgba(255,255,255,0.8);
+      font-weight: 700;
+    }
+
+    /* INSTRUCTION */
+    .instruction {
+      position: relative; z-index: 10;
+      text-align: center; color: rgba(255,255,255,0.5);
+      font-size: 0.95rem; margin: 1.2rem 0 1.8rem;
+    }
+    .instruction span {
+      display: inline-block;
+      animation: bounce 1.5s ease-in-out infinite;
+    }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+    /* GRID */
+    .grid-container {
+      position: relative; z-index: 10;
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 1.2rem 4rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.4rem;
+    }
+
+    /* PAGE CARD */
+    .page-card {
+      border-radius: 1.8rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 3/4;
+      border: 3px solid rgba(255,255,255,0.75);
+      box-shadow: 0 6px 24px var(--glow, rgba(0,0,0,0.3));
+      transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+      animation: cardEntrance 0.6s cubic-bezier(.34,1.56,.64,1) both;
+      animation-delay: var(--delay, 0s);
+      -webkit-tap-highlight-color: transparent;
+    }
+    @keyframes cardEntrance {
+      from { opacity:0; transform:scale(0.4) rotate(-8deg); }
+      to   { opacity:1; transform:scale(1) rotate(0deg); }
+    }
+    .page-card:hover {
+      transform: scale(1.07) rotate(-1.5deg);
+      box-shadow: 0 0 40px var(--glow, rgba(0,0,0,0.3)), 0 0 0 3px white;
+    }
+    .page-card:active { transform: scale(0.95); }
+
+    /* Card background: thumbnail image over gradient */
+    .card-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(160deg, var(--c1), var(--c2));
+    }
+    .card-thumb {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      opacity: 0.35;
+      mix-blend-mode: luminosity;
+    }
+    /* polka dots */
+    .page-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,0.12) 2px, transparent 2px);
+      background-size: 20px 20px;
+      pointer-events: none; z-index: 1;
+    }
+    /* shine */
+    .page-card::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.28) 0%, transparent 55%);
+      pointer-events: none; z-index: 1;
+    }
+
+    .page-num {
+      position: absolute; top: 10px; left: 12px; z-index: 3;
+      font-family: 'Fredoka One', cursive;
+      font-size: 2.2rem; color: white; line-height: 1;
+      text-shadow: 0 3px 0 rgba(0,0,0,0.2);
+    }
+    .ar-badge {
+      position: absolute; top: 12px; right: 10px; z-index: 3;
+      background: rgba(255,255,255,0.3); backdrop-filter: blur(8px);
+      border-radius: 0.5rem; padding: 3px 8px;
+      font-size: 0.6rem; font-weight: 900;
+      color: white; letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .card-emoji-wrap {
+      position: absolute; bottom: 52px; left: 0; right: 0;
+      display: flex; align-items: flex-end; justify-content: center;
+      height: 50%; z-index: 2;
+    }
+    .card-big-emoji {
+      font-size: 3.8rem;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
+      animation: emojiFloat 3s ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+    }
+    @keyframes emojiFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    .card-items-preview {
+      position: absolute; bottom: 44px; left: 0; right: 0; z-index: 2;
+      display: flex; justify-content: center; gap: 2px;
+      font-size: 1rem;
+    }
+    .card-title {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+      text-align: center;
+      font-family: 'Fredoka One', cursive;
+      font-size: 0.95rem; color: white;
+      padding: 0.5rem 0.4rem 0.5rem;
+      background: rgba(0,0,0,0.28);
+      border-radius: 0 0 1.4rem 1.4rem;
+      letter-spacing: 0.02em;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .card-items-row {
+      position: absolute; bottom: 38px; left: 0; right: 0; z-index: 2;
+      display: flex; justify-content: center; gap: 3px;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      position: relative; z-index: 10;
+      text-align: center; padding: 1rem;
+      color: rgba(255,255,255,0.25); font-size: 0.8rem;
+    }
+
+    @media (max-width: 480px) {
+      .grid-container { grid-template-columns: repeat(3, 1fr); gap: 0.8rem; }
+      .page-num { font-size: 1.7rem; }
+      .card-title { font-size: 0.75rem; }
+      .card-big-emoji { font-size: 2.8rem; }
+    }
+    @media (max-width: 360px) {
+      .grid-container { grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">📖</div>
+  <div class="splash-title">The Magic English Book</div>
+  <div class="splash-sub">✨ Learn with 3D · 4 Languages ✨</div>
+  <div class="splash-dots">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-badge">🌍 4 Languages · 15 Topics · 3D Models</div>
+  <h1 class="header-title">The Magic English Book</h1>
+  <p class="header-sub">Touch a topic to explore in 3D!</p>
+  <div class="lang-pills">
+    <span class="lang-pill">🇬🇧 English</span>
+    <span class="lang-pill">🇮🇹 Italiano</span>
+    <span class="lang-pill">🇫🇷 Français</span>
+    <span class="lang-pill">🇪🇸 Español</span>
+  </div>
+</header>
+
+<div class="instruction">
+  <span>👆</span> Tap a page to start the magic!
+</div>
+
+<div class="grid-container" id="grid"></div>
+
+<footer>📚 Learn · 🎧 Listen · 🌍 Speak · ✨ 3D Magic!</footer>
+
+<script>
+const PAGES = [
+  { page:1,  title:"Farm Animals",     emoji:"🐓", c1:"#4CAF50", c2:"#1B5E20", glow:"#4CAF5088",
+    items:[{e:"🦆"},{e:"🐕"},{e:"🐐"},{e:"🐱"},{e:"🦃"}], img:"pag1.png" },
+  { page:2,  title:"Sea Animals",      emoji:"🌊", c1:"#1565C0", c2:"#0D47A1", glow:"#1565C088",
+    items:[{e:"🐬"},{e:"🦀"},{e:"🐟"},{e:"🐙"},{e:"🦈"}], img:"pag 2.jpg" },
+  { page:3,  title:"Ocean Life",       emoji:"🐋", c1:"#006064", c2:"#004D40", glow:"#00606488",
+    items:[{e:"🐋"},{e:"🐴"},{e:"🪼"},{e:"⭐"},{e:"🐢"}], img:"pag 3.webp" },
+  { page:4,  title:"Safari Animals",   emoji:"🦁", c1:"#E65100", c2:"#BF360C", glow:"#E6510088",
+    items:[{e:"🦬"},{e:"🐆"},{e:"🐕"},{e:"🐆"},{e:"🦡"}], img:"pag 4.jpg" },
+  { page:5,  title:"African Animals",  emoji:"🌍", c1:"#F57F17", c2:"#E65100", glow:"#F57F1788",
+    items:[{e:"🐘"},{e:"🦒"},{e:"🦁"},{e:"🦏"},{e:"🦓"}], img:"pag 5.jpg" },
+  { page:6,  title:"Toys & Games",     emoji:"🎮", c1:"#880E4F", c2:"#6A1B9A", glow:"#880E4F88",
+    items:[{e:"🪁"},{e:"🚗"},{e:"🤖"},{e:"🥁"},{e:"🚂"}], img:"pag 6.webp" },
+  { page:7,  title:"Food",             emoji:"🍕", c1:"#B71C1C", c2:"#880E0E", glow:"#B71C1C88",
+    items:[{e:"🍔"},{e:"🥗"},{e:"🥪"},{e:"🍝"},{e:"🍕"}], img:"pag 7.webp" },
+  { page:8,  title:"Farm Animals II",  emoji:"🐄", c1:"#33691E", c2:"#1B5E20", glow:"#33691E88",
+    items:[{e:"🐴"},{e:"🐔"},{e:"🐷"},{e:"🐮"},{e:"🐑"}], img:"pag 8.webp" },
+  { page:9,  title:"Breakfast",        emoji:"☕", c1:"#4E342E", c2:"#3E2723", glow:"#4E342E88",
+    items:[{e:"🥛"},{e:"☕"},{e:""},{e:""},{e:""}], img:null },
+  { page:10, title:"Instruments I",    emoji:"🎺", c1:"#4A148C", c2:"#38006b", glow:"#4A148C88",
+    items:[{e:"🎼"},{e:"🪗"},{e:"🎷"},{e:"🥁"},{e:"🎺"}], img:"pag 10.webp" },
+  { page:11, title:"Toys",             emoji:"🧸", c1:"#006064", c2:"#004D40", glow:"#00606488",
+    items:[{e:"🪆"},{e:"🧱"},{e:"🧸"},{e:"⚽"},{e:"🧩"}], img:"pag 11.webp" },
+  { page:12, title:"Vehicles",         emoji:"🚗", c1:"#1A237E", c2:"#0D1B8E", glow:"#1A237E88",
+    items:[{e:"🚛"},{e:"🚁"},{e:"🏍️"},{e:"🚕"},{e:"🚂"}], img:"pag 12.jpg" },
+  { page:13, title:"Instruments II",   emoji:"🎸", c1:"#311B92", c2:"#4527A0", glow:"#311B9288",
+    items:[{e:"🎸"},{e:"🎶"},{e:"🥁"},{e:"🎹"},{e:"🎻"}], img:"pag 13.webp" },
+  { page:14, title:"Clothing",         emoji:"👗", c1:"#880E4F", c2:"#C2185B", glow:"#880E4F88",
+    items:[{e:"👕"},{e:"🎩"},{e:"👖"},{e:"👟"},{e:"👗"}], img:"pag 14.webp" },
+  { page:15, title:"Transport",        emoji:"✈️", c1:"#01579B", c2:"#006494", glow:"#01579B88",
+    items:[{e:"✈️"},{e:"🚗"},{e:"⛵"},{e:"🚲"},{e:"🚌"}], img:"pag 15.webp" },
+];
+
+const grid = document.getElementById('grid');
+PAGES.forEach((p, i) => {
+  const card = document.createElement('div');
+  card.className = 'page-card';
+  card.style.cssText = `--c1:${p.c1};--c2:${p.c2};--glow:${p.glow};--delay:${(i*0.06).toFixed(2)}s`;
+
+  const thumbStyle = p.img
+    ? `background-image:url('../Libro%20da%20colorare%20INGLESE/${encodeURIComponent(p.img)}')`
+    : '';
+
+  const itemEmojis = p.items.filter(x => x.e).map(x => x.e).join('');
+
+  card.innerHTML = `
+    <div class="card-bg"></div>
+    <div class="card-thumb" style="${thumbStyle}"></div>
+    <div class="page-num">${p.page}</div>
+    <div class="ar-badge">3D</div>
+    <div class="card-emoji-wrap">
+      <div class="card-big-emoji">${p.emoji}</div>
+    </div>
+    <div class="card-items-row">${itemEmojis}</div>
+    <div class="card-title">${p.title}</div>
+  `;
+
+  card.addEventListener('click', () => {
+    card.style.transform = 'scale(0.92)';
+    setTimeout(() => {
+      window.location.href = `page.html?page=${p.page}`;
+    }, 110);
+  });
+  grid.appendChild(card);
+});
+
+setTimeout(() => {
+  const s = document.getElementById('splash');
+  if (s) s.remove();
+}, 3400);
+</script>
+</body>
+</html>

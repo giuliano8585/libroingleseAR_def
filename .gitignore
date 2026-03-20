@@ -1,0 +1,15 @@
+# Exclude the duplicate copy (saves ~700MB of LFS quota)
+LIBRO INGLESE 2/
+
+# Exclude alternate GLB folder (duplicates of 3d/)
+file glb libro inglese/
+
+# Exclude filelibro (empty)
+filelibro/
+
+# Windows / OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+__pycache__/
+*.pyc
