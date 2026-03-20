@@ -1,6 +1,6 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/webapp/index.html" }
+  "redirects": [
+    { "source": "/", "destination": "/webapp/index.html", "permanent": false }
   ],
   "headers": [
     {
