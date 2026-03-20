@@ -162,6 +162,7 @@
     // AR: mind file + model path
     window._MIND  = '/mind/pagina' + pg + '.mind';
     window._MODEL = enc('/3d/pagina ' + pg + '/' + item.glb);
+    window._NUM_TARGETS = pd.items.length; // how many anchors to register
 
     // Audio paths
     function audioPath(lang) {
@@ -687,15 +688,45 @@ if (noAR) {
       }
     }
 
-    // Anchor for selected item index
-    const anchor = mindarThree.addAnchor(anchorIdx);
-    const tiltGroup = new THREE.Group();
-    tiltGroup.rotation.x = Math.PI/2;
-    anchor.group.add(tiltGroup);
-    if (modelScene) tiltGroup.add(modelScene);
-
-    let popAnim=null;
+    // Add anchors for ALL targets in the .mind file (0 to numTargets-1).
+    // The compilation order of images is unknown, so we listen on ALL anchors.
+    // Whichever image the camera detects, we show the selected model there.
+    const numTargets = window._NUM_TARGETS || 5;
+    let popAnim = null;
     const BASE_SC = modelScene ? modelScene.scale.x : TARGET_SC;
+    let activeTiltGroup = null;
+
+    for (let i = 0; i < numTargets; i++) {
+      try {
+        const anchor = mindarThree.addAnchor(i);
+        const tg = new THREE.Group();
+        tg.rotation.x = Math.PI/2;
+        anchor.group.add(tg);
+
+        anchor.onTargetFound = () => {
+          if (modelScene) {
+            if (activeTiltGroup && activeTiltGroup !== tg) activeTiltGroup.remove(modelScene);
+            tg.add(modelScene);
+            activeTiltGroup = tg;
+            modelScene.visible = true;
+            modelScene.scale.set(0,0,0);
+            modelScene.rotation.set(0,-0.52,0);
+            popAnim = { start:performance.now(), duration:900 };
+          }
+          window.onTargetFound();
+        };
+        anchor.onTargetLost = () => {
+          if (activeTiltGroup === tg) {
+            if (modelScene) modelScene.visible = false;
+            activeTiltGroup = null;
+            popAnim = null;
+          }
+          window.onTargetLost();
+        };
+      } catch(e) {
+        console.warn('addAnchor', i, 'failed:', e);
+      }
+    }
 
     // Pinch zoom
     let lastPinch=null;
@@ -708,20 +739,6 @@ if (noAR) {
     },{passive:true});
     arDiv.addEventListener('touchend',()=>{ lastPinch=null; },{passive:true});
     arDiv.addEventListener('wheel',e=>{ e.preventDefault(); window._arZoom.set(window._arZoom.get()*(e.deltaY>0?0.92:1.08)); },{passive:false});
-
-    anchor.onTargetFound = () => {
-      if (modelScene) {
-        modelScene.visible=true;
-        modelScene.scale.set(0,0,0);
-        modelScene.rotation.set(0,-0.52,0);
-        popAnim={ start:performance.now(), duration:900 };
-      }
-      window.onTargetFound();
-    };
-    anchor.onTargetLost = () => {
-      if (modelScene) { modelScene.visible=false; popAnim=null; }
-      window.onTargetLost();
-    };
 
     await mindarThree.start();
     window.hideLoading();
@@ -748,6 +765,14 @@ if (noAR) {
   } catch(err) {
     console.error('MindAR error:', err);
     window.hideLoading();
+    // Show error on screen so user knows what went wrong
+    var errDiv = document.createElement('div');
+    errDiv.style.cssText = 'position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;color:white;gap:1rem;background:rgba(0,0,0,0.85);';
+    errDiv.innerHTML = '<div style="font-size:3rem">⚠️</div>'
+      + '<div style="font-family:Fredoka One,cursive;font-size:1.4rem">AR Error</div>'
+      + '<div style="font-size:0.85rem;opacity:0.7;max-width:320px;word-break:break-word">' + String(err).slice(0,200) + '</div>'
+      + '<a href="/webapp/page.html?page=' + (window._PAGE||1) + '" style="margin-top:1rem;padding:0.6rem 1.6rem;border-radius:2rem;background:rgba(255,255,255,0.2);color:white;text-decoration:none;font-family:Fredoka One,cursive">← Go back</a>';
+    document.body.appendChild(errDiv);
   }
 }
 </script>
