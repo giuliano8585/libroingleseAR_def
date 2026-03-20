@@ -16,7 +16,7 @@
     window._GLB  = glb;
     window._isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     function enc(s){ return s.replace(/ /g,'%20'); }
-    window._GLB_PATH  = enc('../3d/pagina ' + pg + '/' + glb);
+    window._GLB_PATH  = enc('/3d/pagina ' + pg + '/' + glb);
   })();
   </script>
 
@@ -134,7 +134,7 @@ if (window._isIOS) {
 } else {
   // Android: Google Scene Viewer via intent URL
   var origin  = location.origin;
-  var glbAbs  = origin + '/3d/pagina%20' + pg + '/' + encodeURIComponent(glb);
+  var glbAbs  = origin + '/3d/pagina ' + pg + '/' + glb;
   var fallback = encodeURIComponent(location.href);
   var glbEnc   = encodeURIComponent(glbAbs);
 

@@ -153,19 +153,19 @@
     var pd  = ALL_PAGES.find(function(p){ return p.page === pg; }) || ALL_PAGES[0];
     var item = pd.items[Math.min(idx, pd.items.length-1)];
 
-    // Model path
-    var modelPath = enc('../3d/pagina ' + pg + '/' + item.glb);
+    // Model path (absolute from site root)
+    var modelPath = enc('/3d/pagina ' + pg + '/' + item.glb);
 
-    // Audio paths (if not page 9 / noAudio)
+    // Audio paths (absolute from site root)
     function audioPath(lang) {
       var folder = { en:'inglese', it:'italiano', fr:'francese', es:'spagnolo' }[lang];
       var code   = { en:'EN',     it:'IT',       fr:'FR',       es:'ES'      }[lang];
       var stem   = item.stem;
       var file   = stem + '_' + code + '.mp3';
       if (pg === 1) {
-        return enc('../Pagina 1/audio/' + folder + '/' + file);
+        return enc('/Pagina 1/audio/' + folder + '/' + file);
       } else {
-        return enc('../AUDIO LIBRO INGLESE/pagina ' + pg + '/' + folder + '/' + file);
+        return enc('/AUDIO LIBRO INGLESE/pagina ' + pg + '/' + folder + '/' + file);
       }
     }
 
@@ -469,7 +469,7 @@ document.getElementById('loading-bar').style.background = 'linear-gradient(90deg
 document.getElementById('item-emoji-badge').textContent = item.emoji || '';
 document.getElementById('item-name-en').textContent     = item.en    || '';
 document.getElementById('name-en-big').textContent      = item.en    || '';
-document.getElementById('back-btn').href = 'page.html?page=' + pageNum;
+document.getElementById('back-btn').href = '/webapp/page.html?page=' + pageNum;
 
 // Names chips
 var namesRow = document.getElementById('names-row');
@@ -558,7 +558,7 @@ function launchFloorAR() {
   var glb  = window._ITEM && window._ITEM.glb;
   var stem = glb ? glb.replace('.glb','') : 'item';
   var pg   = window._PAGE || 1;
-  location.href = 'floor-ar.html?page=' + pg + '&glb=' + encodeURIComponent(glb || '');
+  location.href = '/webapp/floor-ar.html?page=' + pg + '&glb=' + encodeURIComponent(glb || '');
 }
 
 // Hint: hide on first interaction

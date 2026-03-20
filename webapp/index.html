@@ -339,7 +339,7 @@ PAGES.forEach((p, i) => {
   card.style.cssText = `--c1:${p.c1};--c2:${p.c2};--glow:${p.glow};--delay:${(i*0.06).toFixed(2)}s`;
 
   const thumbStyle = p.img
-    ? `background-image:url('../Libro%20da%20colorare%20INGLESE/${encodeURIComponent(p.img)}')`
+    ? `background-image:url('/Libro%20da%20colorare%20INGLESE/${encodeURIComponent(p.img)}')`
     : '';
 
   const itemEmojis = p.items.filter(x => x.e).map(x => x.e).join('');
@@ -359,7 +359,7 @@ PAGES.forEach((p, i) => {
   card.addEventListener('click', () => {
     card.style.transform = 'scale(0.92)';
     setTimeout(() => {
-      window.location.href = `page.html?page=${p.page}`;
+      window.location.href = `/webapp/page.html?page=${p.page}`;
     }, 110);
   });
   grid.appendChild(card);

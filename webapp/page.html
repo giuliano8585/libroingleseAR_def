@@ -187,7 +187,7 @@
 <body>
 
 <div id="top-bar">
-  <a id="back-btn" href="index.html">←</a>
+  <a id="back-btn" href="/webapp/index.html">←</a>
   <div class="page-badge" id="page-badge">Page</div>
 </div>
 
@@ -359,7 +359,7 @@ pageData.items.forEach((item, idx) => {
   card.addEventListener('click', () => {
     card.style.transform = 'scale(0.9)';
     setTimeout(() => {
-      window.location.href = `item.html?page=${pageNum}&idx=${idx}`;
+      window.location.href = `/webapp/item.html?page=${pageNum}&idx=${idx}`;
     }, 110);
   });
   grid.appendChild(card);
